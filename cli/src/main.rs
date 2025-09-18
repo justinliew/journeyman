@@ -24,6 +24,10 @@ struct Cli {
     /// End year for season data collection (current season start year)
     #[arg(long, default_value = "2025")]
     end_year: u32,
+    
+    /// Include game-by-game data to find missing players
+    #[arg(long, default_value = "false")]
+    include_games: bool,
 }
 
 #[derive(Deserialize)]
@@ -47,6 +51,50 @@ struct RosterData {
     goalies: Option<Vec<PlayerName>>,
 }
 
+// Game data structures for extracting players from game logs
+#[derive(Deserialize)]
+struct ScheduleResponse {
+    games: Vec<GameInfo>,
+}
+
+#[derive(Deserialize)]
+struct GameInfo {
+    id: u64,
+    #[serde(rename = "awayTeam")]
+    away_team: TeamGameInfo,
+    #[serde(rename = "homeTeam")]
+    home_team: TeamGameInfo,
+}
+
+#[derive(Deserialize)]
+struct TeamGameInfo {
+    abbrev: String,
+}
+
+#[derive(Deserialize)]
+struct GameDetails {
+    #[serde(rename = "awayTeam")]
+    away_team: Option<TeamDetails>,
+    #[serde(rename = "homeTeam")]
+    home_team: Option<TeamDetails>,
+}
+
+#[derive(Deserialize)]
+struct TeamDetails {
+    #[serde(rename = "skaters")]
+    skaters: Option<Vec<GamePlayer>>,
+    #[serde(rename = "goalies")]
+    goalies: Option<Vec<GamePlayer>>,
+}
+
+#[derive(Deserialize)]
+struct GamePlayer {
+    #[serde(rename = "firstName")]
+    first_name: NameField,
+    #[serde(rename = "lastName")]
+    last_name: NameField,
+}
+
 #[derive(Serialize)]
 struct PlayerDatabase {
     teams: HashMap<String, Vec<String>>,
@@ -63,7 +111,7 @@ const CURRENT_TEAM_CODES: [&str; 32] = [
 ];
 
 // Historical team codes that need to be consolidated into current teams
-const HISTORICAL_TEAM_CODES: [&str; 20] = [
+const HISTORICAL_TEAM_CODES: [&str; 11] = [
     "ATL",  // Atlanta Thrashers → Winnipeg Jets
     "HFD",  // Hartford Whalers → Carolina Hurricanes  
     "QUE",  // Quebec Nordiques → Colorado Avalanche
@@ -75,15 +123,6 @@ const HISTORICAL_TEAM_CODES: [&str; 20] = [
     "PHX",  // Phoenix Coyotes → Utah Hockey Club
     "ARI",  // Arizona Coyotes → Utah Hockey Club
     "MIG",  // Mighty Ducks → Anaheim Ducks
-    "TBL1", // Tampa Bay Lightning (historical code if different)
-    "FLA1", // Florida Panthers (historical code if different)
-    "SJS1", // San Jose Sharks (historical code if different)
-    "OTT1", // Ottawa Senators (historical code if different)
-    "NSH1", // Nashville Predators (historical code if different)
-    "CBJ1", // Columbus Blue Jackets (historical code if different)
-    "MIN1", // Minnesota Wild (historical code if different)
-    "VGK1", // Vegas Golden Knights (historical code if different)
-    "SEA1", // Seattle Kraken (historical code if different)
 ];
 
 // Team relocation mapping: historical_code -> current_code
@@ -137,6 +176,112 @@ async fn fetch_roster(client: &reqwest::Client, team_code: &str, season: &str) -
     }
 }
 
+async fn fetch_team_schedule(client: &reqwest::Client, team_code: &str, season: &str) -> Result<ScheduleResponse, Box<dyn std::error::Error>> {
+    // Try different API endpoint formats
+    let urls = vec![
+        format!("https://api-web.nhle.com/v1/club-schedule-season/{}/{}", team_code, season),
+        format!("https://api-web.nhle.com/v1/schedule/{}/{}", team_code, season),
+        format!("https://statsapi.web.nhl.com/api/v1/teams/{}/schedule?season={}", team_code, season),
+    ];
+    
+    for url in urls {
+        let response = client
+            .get(&url)
+            .header("User-Agent", "NHL Player Database Generator 1.0")
+            .send()
+            .await?;
+        
+        if response.status().is_success() {
+            match response.json::<ScheduleResponse>().await {
+                Ok(schedule_data) => return Ok(schedule_data),
+                Err(_) => continue, // Try next URL format
+            }
+        }
+    }
+    
+    Err(format!("All schedule API endpoints failed for {}/{}", team_code, season).into())
+}
+
+async fn fetch_game_details(client: &reqwest::Client, game_id: u64) -> Result<GameDetails, Box<dyn std::error::Error>> {
+    let url = format!("https://api-web.nhle.com/v1/gamecenter/{}/boxscore", game_id);
+    
+    let response = client
+        .get(&url)
+        .header("User-Agent", "NHL Player Database Generator 1.0")
+        .send()
+        .await?;
+    
+    if response.status().is_success() {
+        let game_data: GameDetails = response.json().await?;
+        Ok(game_data)
+    } else {
+        Err(format!("HTTP {} for game {}", response.status(), game_id).into())
+    }
+}
+
+async fn fetch_players_from_games(
+    client: &reqwest::Client, 
+    team_code: &str, 
+    season: &str,
+    delay_ms: u64
+) -> Result<HashSet<String>, Box<dyn std::error::Error>> {
+    let mut game_players = HashSet::new();
+    
+    // Fetch team schedule for the season
+    match fetch_team_schedule(client, team_code, season).await {
+        Ok(schedule) => {
+            println!("    📅 Found {} games for {}/{}", schedule.games.len(), team_code, season);
+            
+            // Limit to first 10 games for now to avoid too many requests
+            let games_to_check = schedule.games.iter().take(10);
+            
+            for game in games_to_check {
+                // Check if this team was playing in this game
+                if game.away_team.abbrev == team_code || game.home_team.abbrev == team_code {
+                    sleep(Duration::from_millis(delay_ms)).await;
+                    
+                    match fetch_game_details(client, game.id).await {
+                        Ok(game_details) => {
+                            // Extract players from the team we're interested in
+                            let team_details = if game.away_team.abbrev == team_code {
+                                &game_details.away_team
+                            } else {
+                                &game_details.home_team
+                            };
+                            
+                            if let Some(team_data) = team_details {
+                                // Extract skaters
+                                if let Some(skaters) = &team_data.skaters {
+                                    for player in skaters {
+                                        let full_name = format!("{} {}", player.first_name.default, player.last_name.default);
+                                        game_players.insert(full_name);
+                                    }
+                                }
+                                
+                                // Extract goalies
+                                if let Some(goalies) = &team_data.goalies {
+                                    for player in goalies {
+                                        let full_name = format!("{} {}", player.first_name.default, player.last_name.default);
+                                        game_players.insert(full_name);
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("    ⚠️  Failed to fetch game {}: {}", game.id, e);
+                        }
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("    ⚠️  Failed to fetch schedule for {}/{}: {}", team_code, season, e);
+        }
+    }
+    
+    Ok(game_players)
+}
+
 fn extract_players(roster_data: &RosterData) -> Vec<String> {
     let mut players = Vec::new();
     
@@ -170,8 +315,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Rate limit delay: {}ms", cli.delay);
     println!("Seasons: {}-{} to {}-{}", cli.start_year, cli.start_year + 1, cli.end_year, cli.end_year + 1);
     
-    // Generate seasons
-    let seasons: Vec<String> = (cli.start_year..cli.end_year)
+    // Generate seasons (inclusive range)
+    let seasons: Vec<String> = (cli.start_year..=cli.end_year)
         .map(|year| format!("{}{}", year, year + 1))
         .collect();
     
@@ -197,23 +342,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     for (team_idx, &team_code) in all_team_codes.iter().enumerate() {
         let mut team_players = HashSet::new();
+        let mut roster_players = HashSet::new();
+        let mut game_players = HashSet::new();
         
-        for (season_idx, season) in seasons.iter().enumerate() {
+        for (_season_idx, season) in seasons.iter().enumerate() {
+            // Fetch roster data
             match fetch_roster(&client, team_code, season).await {
                 Ok(roster_data) => {
                     let players = extract_players(&roster_data);
                     for player in players {
+                        roster_players.insert(player.clone());
                         team_players.insert(player);
                     }
-                    if !team_players.is_empty() {
-                        println!("✓ {}/{} - Found {} players", team_code, season, team_players.len());
+                    if !roster_players.is_empty() {
+                        println!("✓ {}/{} - Roster: {} players", team_code, season, roster_players.len());
                     }
                 }
                 Err(e) => {
-                    // Only log errors for seasons where we expect data
-//                    if season >= "19671968" { // NHL expansion era
-                        eprintln!("⚠️  Failed to fetch {}/{}: {}", team_code, season, e);
-//                    }
+                    eprintln!("⚠️  Failed to fetch roster {}/{}: {}", team_code, season, e);
+                }
+            }
+            
+            // Fetch game data if enabled
+            if cli.include_games {
+                match fetch_players_from_games(&client, team_code, season, cli.delay).await {
+                    Ok(season_game_players) => {
+                        let mut new_players = 0;
+                        for player in &season_game_players {
+                            if !roster_players.contains(player) {
+                                new_players += 1;
+                                game_players.insert(player.clone());
+                                team_players.insert(player.clone());
+                            }
+                        }
+                        if new_players > 0 {
+                            println!("  📋 {}/{} - Games: {} additional players not in roster", team_code, season, new_players);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("⚠️  Failed to fetch game data {}/{}: {}", team_code, season, e);
+                    }
                 }
             }
             
@@ -238,8 +406,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             
-            println!("🏒 Completed {} ({}/{}) - {} unique players → consolidated into {}", 
-                team_code, team_idx + 1, all_team_codes.len(), team_players.len(), current_team);
+            let roster_count = roster_players.len();
+            let game_count = game_players.len();
+            let total_count = team_players.len();
+            
+            if cli.include_games && game_count > 0 {
+                println!("🏒 Completed {} ({}/{}) - {} total players ({} roster + {} from games) → consolidated into {}", 
+                    team_code, team_idx + 1, all_team_codes.len(), total_count, roster_count, game_count, current_team);
+            } else {
+                println!("🏒 Completed {} ({}/{}) - {} unique players → consolidated into {}", 
+                    team_code, team_idx + 1, all_team_codes.len(), total_count, current_team);
+            }
         } else {
             eprintln!("⚠️  No mapping found for team code: {}", team_code);
         }
@@ -268,6 +445,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Teams: {}", database.teams.len());
     println!("   Total players: {}", total_players);
     println!("   Seasons covered: {} to {}", cli.start_year, cli.end_year);
+    if cli.include_games {
+        println!("   Data sources: Team rosters + game-by-game player appearances");
+        println!("   Note: Game data limited to first 10 games per team/season for API efficiency");
+    } else {
+        println!("   Data sources: Team rosters only");
+    }
     
     // Write to JSON file
     let json = serde_json::to_string_pretty(&database)?;
