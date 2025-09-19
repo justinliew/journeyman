@@ -302,6 +302,7 @@
             <button onclick="generateNewGame()">Practice Mode</button>
             <button onclick="startDailyMode()">Daily Challenge</button>
             <button onclick="clearPlayers()">Clear Players</button>
+            <button id="shareBtn" onclick="shareGame()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: none;">Share Game</button>
             <button id="optimalSolutionBtn" onclick="showOptimalSolution()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); display: none;">Show Optimal Solution</button>
         </div>
         
@@ -569,6 +570,7 @@
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
+            document.getElementById('shareBtn').style.display = 'inline-block';
             
             // Initialize rarity score for practice mode
             updateRarityScore();
@@ -612,6 +614,7 @@
                     updateDisplay();
                     document.getElementById('victoryMessage').style.display = 'none';
                     document.getElementById('optimalSolutionBtn').style.display = 'none';
+                    document.getElementById('shareBtn').style.display = 'none';
                 } else {
                     showError('Failed to load daily challenge');
                 }
@@ -1402,10 +1405,98 @@
             }
         }
 
+        // Share functionality
+        function shareGame() {
+            if (selectedTeams.length === 0) {
+                alert('No game to share! Start a practice mode game first.');
+                return;
+            }
+            
+            if (isDailyMode) {
+                alert('Daily challenges cannot be shared - they use the same teams for everyone.');
+                return;
+            }
+            
+            // Encode teams as URL parameter
+            const teamsParam = encodeURIComponent(selectedTeams.join(','));
+            const shareUrl = `${window.location.origin}${window.location.pathname}?teams=${teamsParam}`;
+            
+            // Copy to clipboard
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showShareSuccess('Link copied to clipboard!');
+                }).catch(() => {
+                    showShareFallback(shareUrl);
+                });
+            } else {
+                showShareFallback(shareUrl);
+            }
+        }
+        
+        function showShareSuccess(message) {
+            const btn = document.getElementById('shareBtn');
+            const originalText = btn.textContent;
+            btn.textContent = message;
+            btn.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            }, 2000);
+        }
+        
+        function showShareFallback(url) {
+            // Fallback: show the URL in a prompt for manual copying
+            prompt('Copy this link to share your game:', url);
+        }
+        
+        function loadSharedGame() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const teamsParam = urlParams.get('teams');
+            
+            if (teamsParam) {
+                try {
+                    const sharedTeams = decodeURIComponent(teamsParam).split(',');
+                    const allTeams = Object.keys(teamCodes);
+                    
+                    // Validate that all shared teams are valid
+                    const validTeams = sharedTeams.filter(team => allTeams.includes(team));
+                    
+                    if (validTeams.length === sharedTeams.length && validTeams.length > 0) {
+                        // Load the shared game
+                        selectedTeams = validTeams;
+                        addedPlayers = [];
+                        gameActive = true;
+                        isDailyMode = false;
+                        dailyTeamsData = null;
+                        
+                        // Update UI
+                        document.getElementById('gameMode').textContent = 'Practice Mode (Shared)';
+                        document.getElementById('rarityScore').style.display = 'block';
+                        document.getElementById('shareBtn').style.display = 'inline-block';
+                        
+                        updateDisplay();
+                        checkVictory();
+                        updateRarityScore();
+                        
+                        return true; // Successfully loaded shared game
+                    }
+                } catch (e) {
+                    console.log('Invalid shared game URL:', e);
+                }
+            }
+            
+            return false; // No valid shared game found
+        }
+
         // Load data and start the game
         async function initializeGame() {
             await loadNHLPlayerData();
-            generateNewGame();
+            
+            // Check if this is a shared game first
+            if (!loadSharedGame()) {
+                // No shared game, generate a new random game
+                generateNewGame();
+            }
         }
 
         // Start the initialization
