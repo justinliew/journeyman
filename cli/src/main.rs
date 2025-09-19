@@ -296,7 +296,7 @@ async fn build_database_from_player_search(
         ("Calgary Flames", "CGY"), ("Carolina Hurricanes", "CAR"), ("Chicago Blackhawks", "CHI"),
         ("Colorado Avalanche", "COL"), ("Columbus Blue Jackets", "CBJ"), ("Dallas Stars", "DAL"),
         ("Detroit Red Wings", "DET"), ("Edmonton Oilers", "EDM"), ("Florida Panthers", "FLA"),
-        ("Los Angeles Kings", "LAK"), ("Minnesota Wild", "MIN"), ("Montreal Canadiens", "MTL"),
+        ("Los Angeles Kings", "LAK"), ("Minnesota Wild", "MIN"), ("Montréal Canadiens", "MTL"),
         ("Nashville Predators", "NSH"), ("New Jersey Devils", "NJD"), ("New York Islanders", "NYI"),
         ("New York Rangers", "NYR"), ("Ottawa Senators", "OTT"), ("Philadelphia Flyers", "PHI"),
         ("Pittsburgh Penguins", "PIT"), ("San Jose Sharks", "SJS"), ("Seattle Kraken", "SEA"),
