@@ -406,6 +406,31 @@
             return teamPlayers.map(player => getPlayerName(player));
         }
 
+        // Helper function to get player name from added players (which can be strings or objects)
+        function getAddedPlayerName(addedPlayer) {
+            if (typeof addedPlayer === 'string') {
+                return addedPlayer;
+            } else if (addedPlayer && typeof addedPlayer === 'object' && addedPlayer.name) {
+                return addedPlayer.name;
+            }
+            return '';
+        }
+
+        // Helper function to check if an added player matches a team player, considering IDs
+        function doesAddedPlayerMatchTeamPlayer(addedPlayer, teamPlayer) {
+            const addedPlayerName = getAddedPlayerName(addedPlayer);
+            const teamPlayerName = getPlayerName(teamPlayer);
+            
+            // If we have ID information for both, use that for exact matching
+            if (typeof addedPlayer === 'object' && addedPlayer.id && 
+                typeof teamPlayer === 'object' && teamPlayer.id) {
+                return addedPlayer.id === teamPlayer.id;
+            }
+            
+            // Otherwise fall back to name matching
+            return addedPlayerName.toLowerCase() === teamPlayerName.toLowerCase();
+        }
+
         // Load comprehensive NHL player data from the API
         async function loadNHLPlayerData() {
             if (isLoadingData) return;
@@ -485,7 +510,7 @@
                     body: JSON.stringify({
                         user_id: getUserId(),
                         date: dailyTeamsData.date,
-                        players: addedPlayers,
+                        players: addedPlayers.map(p => getAddedPlayerName(p)),
                         player_count: addedPlayers.length
                     })
                 });
@@ -503,7 +528,7 @@
 
         function generateNewGame() {
             const allTeams = Object.keys(teamCodes);
-            selectedTeams = [];
+            selectedTeams = ["New York Islanders","Carolina Hurricanes"];
             
             // Select 8 random teams
             while (selectedTeams.length < 8) {
@@ -623,7 +648,7 @@
                 return;
             }
             
-            if (addedPlayers.some(p => p.toLowerCase() === playerName.toLowerCase())) {
+            if (addedPlayers.some(p => getAddedPlayerName(p).toLowerCase() === playerName.toLowerCase())) {
                 showError("Player already added");
                 return;
             }
@@ -651,8 +676,16 @@
             }
             
             if (validationResult.status === 'valid') {
-                // Add the validated player name
-                addedPlayers.push(validationResult.playerName);
+                // Create player object to store with ID for disambiguation
+                const playerObj = {
+                    name: validationResult.playerName,
+                    id: validationResult.playerId,
+                    playerInfo: validationResult.playerInfo,
+                    teamsPlayed: validationResult.teamsPlayed
+                };
+                
+                // Add the validated player object
+                addedPlayers.push(playerObj);
                 input.value = '';
                 
                 // Show validation info
@@ -687,10 +720,16 @@
                     const playerName = getPlayerName(player);
                     const normalizedPlayer = playerName.toLowerCase();
                     
+                    // Get player ID if available (for disambiguation)
+                    const playerId = (typeof player === 'object' && player.id) ? player.id : null;
+                    const playerInfo = (typeof player === 'object') ? player : null;
+                    
                     // Exact match
                     if (normalizedPlayer === normalizedInput) {
                         allMatches.push({
                             name: playerName,
+                            id: playerId,
+                            playerInfo: playerInfo,
                             teamCode,
                             teamName,
                             matchType: 'exact'
@@ -702,6 +741,8 @@
                         if (normalizedInput.length >= 3 && normalizedPlayer.length >= 3) {
                             allMatches.push({
                                 name: playerName,
+                                id: playerId,
+                                playerInfo: playerInfo,
                                 teamCode,
                                 teamName,
                                 matchType: 'partial'
@@ -715,18 +756,23 @@
                 return { status: 'not_found' };
             }
             
-            // Group matches by player name
+            // Group matches by player ID first, then by name for backward compatibility
             const uniquePlayers = new Map();
             allMatches.forEach(match => {
-                if (!uniquePlayers.has(match.name)) {
-                    uniquePlayers.set(match.name, {
+                // Use player ID as primary key if available, otherwise fall back to name
+                const playerKey = match.id || match.name;
+                
+                if (!uniquePlayers.has(playerKey)) {
+                    uniquePlayers.set(playerKey, {
                         name: match.name,
+                        id: match.id,
+                        playerInfo: match.playerInfo,
                         teams: [],
                         teamsInGame: []
                     });
                 }
                 
-                const player = uniquePlayers.get(match.name);
+                const player = uniquePlayers.get(playerKey);
                 if (!player.teams.includes(match.teamName)) {
                     player.teams.push(match.teamName);
                 }
@@ -764,17 +810,50 @@
                 return {
                     status: 'valid',
                     playerName: validPlayers[0].name,
+                    playerId: validPlayers[0].id,
+                    playerInfo: validPlayers[0].playerInfo,
                     teamsPlayed: validPlayers[0].teamsInGame
                 };
             }
             
-            // Multiple valid players found
+            // Multiple valid players found - check if they have the same name but different IDs
+            const playerNameCounts = new Map();
+            validPlayers.forEach(player => {
+                const nameKey = player.name.toLowerCase();
+                if (!playerNameCounts.has(nameKey)) {
+                    playerNameCounts.set(nameKey, []);
+                }
+                playerNameCounts.get(nameKey).push(player);
+            });
+            
+            // Check for name conflicts (same name, different players)
+            const hasNameConflicts = Array.from(playerNameCounts.values()).some(players => players.length > 1);
+            
+            if (hasNameConflicts) {
+                // Show disambiguation with additional info for players with same names
+                return {
+                    status: 'multiple_matches',
+                    matches: validPlayers.map(player => ({
+                        name: player.name,
+                        id: player.id,
+                        playerInfo: player.playerInfo,
+                        teamsInGame: player.teamsInGame,
+                        allTeams: player.teams,
+                        hasNameConflict: playerNameCounts.get(player.name.toLowerCase()).length > 1
+                    }))
+                };
+            }
+            
+            // Multiple valid players found but no name conflicts
             return {
                 status: 'multiple_matches',
                 matches: validPlayers.map(player => ({
                     name: player.name,
+                    id: player.id,
+                    playerInfo: player.playerInfo,
                     teamsInGame: player.teamsInGame,
-                    allTeams: player.teams
+                    allTeams: player.teams,
+                    hasNameConflict: false
                 }))
             };
         }
@@ -783,31 +862,90 @@
             const modal = document.getElementById('disambiguationModal');
             const optionsDiv = document.getElementById('playerOptions');
             
+            // Update modal title based on whether there are name conflicts
+            const hasNameConflicts = matches.some(match => match.hasNameConflict);
+            const modalTitle = modal.querySelector('h3');
+            if (hasNameConflicts) {
+                modalTitle.textContent = 'Multiple players with the same name found';
+                modal.querySelector('p').textContent = 'Please select the correct player based on additional details:';
+            } else {
+                modalTitle.textContent = 'Multiple players found';
+                modal.querySelector('p').textContent = 'Please select which player you meant:';
+            }
+            
             optionsDiv.innerHTML = '';
             
             matches.forEach(match => {
                 const button = document.createElement('button');
                 button.className = 'player-option';
-                button.innerHTML = `<div>${match.name}</div>`;
-                button.onclick = () => selectDisambiguatedPlayer(match.name, match.teamsInGame);
+                
+                // Create detailed display for disambiguation
+                let displayText = `<div><strong>${match.name}</strong></div>`;
+                
+                // Add additional info if there are name conflicts
+                if (match.hasNameConflict && match.playerInfo) {
+                    const additionalInfo = [];
+                    if (match.playerInfo.birth_date) {
+                        additionalInfo.push(`Born: ${match.playerInfo.birth_date}`);
+                    }
+                    if (match.playerInfo.birth_place) {
+                        additionalInfo.push(`From: ${match.playerInfo.birth_place}`);
+                    }
+                    if (match.playerInfo.position) {
+                        additionalInfo.push(`Position: ${match.playerInfo.position}`);
+                    }
+                    if (match.id) {
+                        additionalInfo.push(`ID: ${match.id}`);
+                    }
+                    
+                    if (additionalInfo.length > 0) {
+                        displayText += `<div class="player-option-details" style="font-size: 0.8rem; opacity: 0.9; margin-top: 4px;">${additionalInfo.join(' | ')}</div>`;
+                    }
+                }
+                
+                // Add teams info
+                displayText += `<div class="player-option-teams">Plays for: ${match.teamsInGame.join(', ')}</div>`;
+                
+                button.innerHTML = displayText;
+                button.onclick = () => selectDisambiguatedPlayer(match.name, match.teamsInGame, match.id, match.playerInfo);
                 optionsDiv.appendChild(button);
             });
             
             modal.style.display = 'flex';
         }
 
-        function selectDisambiguatedPlayer(playerName, teamsPlayed) {
+        function selectDisambiguatedPlayer(playerName, teamsPlayed, playerId, playerInfo) {
             closeDisambiguationModal();
             
-            // Add the selected player
-            addedPlayers.push(playerName);
+            // Create player object to store with ID for disambiguation
+            const playerObj = {
+                name: playerName,
+                id: playerId,
+                playerInfo: playerInfo,
+                teamsPlayed: teamsPlayed
+            };
+            
+            // Add the selected player object
+            addedPlayers.push(playerObj);
             document.getElementById('playerInput').value = '';
             
-            // Show validation info
+            // Show validation info with additional details if available
             const validationDiv = document.getElementById('validationInfo');
-            validationDiv.innerHTML = `✅ Added ${playerName} (played for: ${teamsPlayed.join(', ')})`;
+            let validationText = `✅ Added ${playerName} (played for: ${teamsPlayed.join(', ')})`;
+            
+            // Add extra details if we have player info and there were name conflicts
+            if (playerInfo && playerId) {
+                const extraDetails = [];
+                if (playerInfo.birth_date) extraDetails.push(playerInfo.birth_date);
+                if (playerInfo.position) extraDetails.push(playerInfo.position);
+                if (extraDetails.length > 0) {
+                    validationText += `<br><small>Details: ${extraDetails.join(', ')}</small>`;
+                }
+            }
+            
+            validationDiv.innerHTML = validationText;
             validationDiv.style.display = 'block';
-            setTimeout(() => validationDiv.style.display = 'none', 3000);
+            setTimeout(() => validationDiv.style.display = 'none', 4000);
             
             updateDisplay();
             checkVictory();
@@ -823,7 +961,19 @@
         }
 
         function removePlayer(playerName) {
-            addedPlayers = addedPlayers.filter(p => p !== playerName);
+            addedPlayers = addedPlayers.filter(p => getAddedPlayerName(p) !== playerName);
+            updateDisplay();
+            document.getElementById('victoryMessage').style.display = 'none';
+            document.getElementById('optimalSolutionBtn').style.display = 'none';
+            
+            // Update rarity score if in daily mode
+            if (isDailyMode) {
+                updateRarityScore();
+            }
+        }
+
+        function removePlayerByIndex(index) {
+            addedPlayers.splice(index, 1);
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
@@ -864,12 +1014,11 @@
                 teamCard.className = 'team-card';
                 
                 // Check which players satisfy this team
-                const satisfyingPlayers = addedPlayers.filter(player => {
+                const satisfyingPlayers = addedPlayers.filter(addedPlayer => {
                     const teamid = teamCodes[team];
                     if (Object.keys(playerDatabase).length > 0 && playerDatabase.teams[teamid]) {
-                        const teamPlayerNames = getTeamPlayerNames(playerDatabase.teams[teamid]);
-                        return teamPlayerNames.some(teamPlayer =>
-                            teamPlayer.toLowerCase() === player.toLowerCase()
+                        return playerDatabase.teams[teamid].some(teamPlayer =>
+                            doesAddedPlayerMatchTeamPlayer(addedPlayer, teamPlayer)
                         );
                     }
                     return false;
@@ -881,7 +1030,7 @@
                 
                 teamCard.innerHTML = `
                     <div class="team-name">${team}</div>
-                    <div class="team-players">${satisfyingPlayers.join(', ') || 'No players yet'}</div>
+                    <div class="team-players">${satisfyingPlayers.map(p => getAddedPlayerName(p)).join(', ') || 'No players yet'}</div>
                 `;
                 
                 grid.appendChild(teamCard);
@@ -892,12 +1041,13 @@
             const list = document.getElementById('playersList');
             list.innerHTML = '';
             
-            addedPlayers.forEach(player => {
+            addedPlayers.forEach((player, index) => {
                 const playerTag = document.createElement('div');
                 playerTag.className = 'player-tag';
+                const playerName = getAddedPlayerName(player);
                 playerTag.innerHTML = `
-                    ${player}
-                    <button class="remove-player" onclick="removePlayer('${player}')">×</button>
+                    ${playerName}
+                    <button class="remove-player" onclick="removePlayerByIndex(${index})">×</button>
                 `;
                 list.appendChild(playerTag);
             });
@@ -907,10 +1057,9 @@
             const satisfiedTeams = selectedTeams.filter(team => {
                 const teamid = teamCodes[team];
                 if (Object.keys(playerDatabase).length > 0 && playerDatabase.teams[teamid]) {
-                    const teamPlayerNames = getTeamPlayerNames(playerDatabase.teams[teamid]);
-                    return addedPlayers.some(player =>
-                        teamPlayerNames.some(teamPlayer =>
-                            teamPlayer.toLowerCase() === player.toLowerCase()
+                    return addedPlayers.some(addedPlayer =>
+                        playerDatabase.teams[teamid].some(teamPlayer =>
+                            doesAddedPlayerMatchTeamPlayer(addedPlayer, teamPlayer)
                         )
                     );
                 }
@@ -925,10 +1074,9 @@
             const satisfiedTeams = selectedTeams.filter(team => {
                 const teamid = teamCodes[team];
                 if (Object.keys(playerDatabase).length > 0 && playerDatabase.teams[teamid]) {
-                    const teamPlayerNames = getTeamPlayerNames(playerDatabase.teams[teamid]);
-                    return addedPlayers.some(player =>
-                        teamPlayerNames.some(teamPlayer =>
-                            teamPlayer.toLowerCase() === player.toLowerCase()
+                    return addedPlayers.some(addedPlayer =>
+                        playerDatabase.teams[teamid].some(teamPlayer =>
+                            doesAddedPlayerMatchTeamPlayer(addedPlayer, teamPlayer)
                         )
                     );
                 }
@@ -1157,7 +1305,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        players: addedPlayers,
+                        players: addedPlayers.map(p => getAddedPlayerName(p)),
                         date: dailyTeamsData.date
                     })
                 });
