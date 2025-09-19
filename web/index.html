@@ -303,14 +303,19 @@
         <p class="subtitle">Find the fewest players who collectively played for all 8 teams!</p>
         
         <div class="controls">
-            <button onclick="generateNewGame()">New Game</button>
+            <button onclick="generateNewGame()">Practice Mode</button>
+            <button onclick="startDailyMode()">Daily Challenge</button>
             <button onclick="clearPlayers()">Clear Players</button>
             <button id="optimalSolutionBtn" onclick="showOptimalSolution()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); display: none;">Show Optimal Solution</button>
         </div>
         
         <div class="stats">
+            <span id="gameMode">Practice Mode</span> | 
             Teams Satisfied: <span class="satisfied-count" id="satisfiedCount">0</span>/8 | 
             Players Used: <span id="playerCount">0</span>
+            <div id="rarityScore" style="display: none; margin-top: 5px; font-size: 0.9rem;">
+                Rarity Score: <span id="rarityValue">0</span>
+            </div>
         </div>
         
         <div id="victoryMessage" class="victory-message" style="display: none;"></div>
@@ -383,6 +388,24 @@
         let playerDatabase = {};
         let isLoadingData = false;
 
+        // Helper function to get player name from either string or PlayerInfo object
+        function getPlayerName(player) {
+            if (typeof player === 'string') {
+                return player;
+            } else if (player && typeof player === 'object' && player.name) {
+                return player.name;
+            }
+            return '';
+        }
+
+        // Helper function to get all player names from a team's player list
+        function getTeamPlayerNames(teamPlayers) {
+            if (!teamPlayers || !Array.isArray(teamPlayers)) {
+                return [];
+            }
+            return teamPlayers.map(player => getPlayerName(player));
+        }
+
         // Load comprehensive NHL player data from the API
         async function loadNHLPlayerData() {
             if (isLoadingData) return;
@@ -396,7 +419,7 @@
 
             playerDatabase = {};
 
-            const response = await fetch('https://journeyman.edgecompute.app/get_players');
+            const response = await fetch('https://journeyman.edgecompute.app/get_playersv2');
             if (response.ok) {
                 playerDatabase = await response.json();
                 // Convert Set back to Array 
@@ -433,6 +456,50 @@
         let selectedTeams = [];
         let addedPlayers = [];
         let gameActive = false;
+        let isDailyMode = false;
+        let dailyTeamsData = null;
+        let userId = null;
+        let hasSubmittedDaily = false;
+
+        // Generate or get user ID
+        function getUserId() {
+            if (!userId) {
+                userId = localStorage.getItem('journeyman_user_id');
+                if (!userId) {
+                    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('journeyman_user_id', userId);
+                }
+            }
+            return userId;
+        }
+
+        // Submit daily solution to backend
+        async function submitDailySolution() {
+            try {
+                console.log('Submitting solution to backend...');
+                const response = await fetch('https://journeyman.edgecompute.app/submit_daily', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: getUserId(),
+                        date: dailyTeamsData.date,
+                        players: addedPlayers,
+                        player_count: addedPlayers.length
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Daily solution submitted successfully:', result);
+                } else {
+                    console.error('Failed to submit daily solution:', response.status);
+                }
+            } catch (error) {
+                console.error('Error submitting daily solution:', error);
+            }
+        }
 
         function generateNewGame() {
             const allTeams = Object.keys(teamCodes);
@@ -448,6 +515,12 @@
             
             addedPlayers = [];
             gameActive = true;
+            isDailyMode = false;
+            dailyTeamsData = null;
+            
+            // Update game mode display
+            document.getElementById('gameMode').textContent = 'Practice Mode';
+            document.getElementById('rarityScore').style.display = 'none';
             
             // Re-enable input controls
             const playerInput = document.getElementById('playerInput');
@@ -459,6 +532,53 @@
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
+        }
+
+        async function startDailyMode() {
+            try {
+                const response = await fetch('https://journeyman.edgecompute.app/get_daily_teams');
+                if (response.ok) {
+                    dailyTeamsData = await response.json();
+                    selectedTeams = dailyTeamsData.teams;
+                    addedPlayers = [];
+                    gameActive = true;
+                    isDailyMode = true;
+                    hasSubmittedDaily = false;
+                    
+                    // Check if user has already submitted today
+                    const submissionCheck = localStorage.getItem(`daily_submitted_${dailyTeamsData.date}`);
+                    if (submissionCheck) {
+                        hasSubmittedDaily = true;
+                        showError('You have already submitted a solution for today! You can view but not resubmit.');
+                    }
+                    
+                    // Update game mode display
+                    document.getElementById('gameMode').textContent = `Daily Challenge (${dailyTeamsData.date})`;
+                    document.getElementById('rarityScore').style.display = 'none';
+                    
+                    // Re-enable input controls (unless already submitted)
+                    const playerInput = document.getElementById('playerInput');
+                    const addButton = document.querySelector('.input-group button');
+                    if (!hasSubmittedDaily) {
+                        playerInput.disabled = false;
+                        addButton.disabled = false;
+                        playerInput.placeholder = "Enter player name...";
+                    } else {
+                        playerInput.disabled = true;
+                        addButton.disabled = true;
+                        playerInput.placeholder = "Already submitted for today";
+                    }
+                    
+                    updateDisplay();
+                    document.getElementById('victoryMessage').style.display = 'none';
+                    document.getElementById('optimalSolutionBtn').style.display = 'none';
+                } else {
+                    showError('Failed to load daily challenge');
+                }
+            } catch (error) {
+                showError('Failed to load daily challenge');
+                console.error('Daily mode error:', error);
+            }
         }
 
         function clearPlayers() {
@@ -474,6 +594,11 @@
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
+            
+            // Update rarity score if in daily mode
+            if (isDailyMode) {
+                updateRarityScore();
+            }
         }
 
         function addPlayer() {
@@ -489,6 +614,12 @@
             
             if (!gameActive) {
                 showError("Please start a new game first");
+                return;
+            }
+            
+            // Check if already submitted in daily mode
+            if (isDailyMode && hasSubmittedDaily) {
+                showError("You have already submitted your solution for today");
                 return;
             }
             
@@ -532,6 +663,11 @@
                 
                 updateDisplay();
                 checkVictory();
+                
+                // Calculate rarity score if in daily mode
+                if (isDailyMode) {
+                    updateRarityScore();
+                }
             }
         }
 
@@ -547,7 +683,8 @@
             for (const [teamCode, players] of Object.entries(playerDatabase.teams || {})) {
                 const teamName = Object.keys(teamCodes).find(name => teamCodes[name] === teamCode);
                 
-                players.forEach(playerName => {
+                players.forEach(player => {
+                    const playerName = getPlayerName(player);
                     const normalizedPlayer = playerName.toLowerCase();
                     
                     // Exact match
@@ -674,6 +811,11 @@
             
             updateDisplay();
             checkVictory();
+            
+            // Calculate rarity score if in daily mode
+            if (isDailyMode) {
+                updateRarityScore();
+            }
         }
 
         function closeDisambiguationModal() {
@@ -685,6 +827,11 @@
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
+            
+            // Update rarity score if in daily mode
+            if (isDailyMode) {
+                updateRarityScore();
+            }
         }
 
         function handleKeyPress(event) {
@@ -720,7 +867,8 @@
                 const satisfyingPlayers = addedPlayers.filter(player => {
                     const teamid = teamCodes[team];
                     if (Object.keys(playerDatabase).length > 0 && playerDatabase.teams[teamid]) {
-                        return playerDatabase.teams[teamid].some(teamPlayer =>
+                        const teamPlayerNames = getTeamPlayerNames(playerDatabase.teams[teamid]);
+                        return teamPlayerNames.some(teamPlayer =>
                             teamPlayer.toLowerCase() === player.toLowerCase()
                         );
                     }
@@ -759,8 +907,9 @@
             const satisfiedTeams = selectedTeams.filter(team => {
                 const teamid = teamCodes[team];
                 if (Object.keys(playerDatabase).length > 0 && playerDatabase.teams[teamid]) {
+                    const teamPlayerNames = getTeamPlayerNames(playerDatabase.teams[teamid]);
                     return addedPlayers.some(player =>
-                        playerDatabase.teams[teamid].some(teamPlayer =>
+                        teamPlayerNames.some(teamPlayer =>
                             teamPlayer.toLowerCase() === player.toLowerCase()
                         )
                     );
@@ -776,8 +925,9 @@
             const satisfiedTeams = selectedTeams.filter(team => {
                 const teamid = teamCodes[team];
                 if (Object.keys(playerDatabase).length > 0 && playerDatabase.teams[teamid]) {
+                    const teamPlayerNames = getTeamPlayerNames(playerDatabase.teams[teamid]);
                     return addedPlayers.some(player =>
-                        playerDatabase.teams[teamid].some(teamPlayer =>
+                        teamPlayerNames.some(teamPlayer =>
                             teamPlayer.toLowerCase() === player.toLowerCase()
                         )
                     );
@@ -785,7 +935,11 @@
                 return false;
             });
             
+            console.log(`CheckVictory: ${satisfiedTeams.length}/8 teams satisfied`, satisfiedTeams);
+            console.log(`Is daily mode: ${isDailyMode}`);
+            
             if (satisfiedTeams.length === 8) {
+                console.log('Victory condition met!');
                 const optimalSolution = findOptimalSolution();
                 const isOptimal = addedPlayers.length === optimalSolution.players.length;
                 const victoryDiv = document.getElementById('victoryMessage');
@@ -793,21 +947,49 @@
                 const playerInput = document.getElementById('playerInput');
                 const addButton = document.querySelector('.input-group button');
                 
+                console.log('Victory elements found:', {
+                    victoryDiv: !!victoryDiv,
+                    optimalBtn: !!optimalBtn,
+                    playerInput: !!playerInput,
+                    addButton: !!addButton
+                });
+                
+                // Handle daily mode submission if not already submitted
+                if (isDailyMode && !hasSubmittedDaily) {
+                    console.log('Submitting daily solution...');
+                    submitDailySolution();
+                    hasSubmittedDaily = true;
+                    localStorage.setItem(`daily_submitted_${dailyTeamsData.date}`, 'true');
+                }
+                
                 // Show the optimal solution button
                 optimalBtn.style.display = 'inline-block';
                 
                 // Disable input and add button
                 playerInput.disabled = true;
                 addButton.disabled = true;
-                playerInput.placeholder = "Game completed! Start a new game to play again.";
+                playerInput.placeholder = isDailyMode && hasSubmittedDaily ? 
+                    "Solution submitted!" : "Game completed! Start a new game to play again.";
                 
                 if (isOptimal) {
-                    victoryDiv.innerHTML = `🎉 PERFECT! You found the optimal solution with ${addedPlayers.length} player${addedPlayers.length === 1 ? '' : 's'}! 🏆`;
+                    if (isDailyMode) {
+                        victoryDiv.innerHTML = `🎉 PERFECT! You found the optimal solution with ${addedPlayers.length} player${addedPlayers.length === 1 ? '' : 's'}! 🏆<br>
+                            <small>Daily Challenge completed with maximum efficiency!</small>`;
+                    } else {
+                        victoryDiv.innerHTML = `🎉 PERFECT! You found the optimal solution with ${addedPlayers.length} player${addedPlayers.length === 1 ? '' : 's'}! 🏆`;
+                    }
                 } else {
-                    victoryDiv.innerHTML = `🎉 Congratulations! You solved it with ${addedPlayers.length} player${addedPlayers.length === 1 ? '' : 's'}!<br>
-                        <small>💡 Optimal solution uses ${optimalSolution.players.length} player${optimalSolution.players.length === 1 ? '' : 's'}</small>`;
+                    if (isDailyMode) {
+                        victoryDiv.innerHTML = `🎉 Congratulations! Daily Challenge completed with ${addedPlayers.length} player${addedPlayers.length === 1 ? '' : 's'}!<br>
+                            <small>💡 Optimal solution uses ${optimalSolution.players.length} player${optimalSolution.players.length === 1 ? '' : 's'}</small>`;
+                    } else {
+                        victoryDiv.innerHTML = `🎉 Congratulations! You solved it with ${addedPlayers.length} player${addedPlayers.length === 1 ? '' : 's'}!<br>
+                            <small>💡 Optimal solution uses ${optimalSolution.players.length} player${optimalSolution.players.length === 1 ? '' : 's'}</small>`;
+                    }
                 }
+                console.log('Setting victory message:', victoryDiv.innerHTML);
                 victoryDiv.style.display = 'block';
+                console.log('Victory message display set to block');
             }
         }
 
@@ -823,7 +1005,8 @@
             selectedTeams.forEach(team => {
                 const teamid = teamCodes[team];
                 if (playerDatabase.teams[teamid]) {
-                    playerDatabase.teams[teamid].forEach(playerName => {
+                    const teamPlayerNames = getTeamPlayerNames(playerDatabase.teams[teamid]);
+                    teamPlayerNames.forEach(playerName => {
                         if (!playerTeamsMap.has(playerName)) {
                             playerTeamsMap.set(playerName, new Set());
                         }
@@ -957,6 +1140,38 @@
                 alert(`Optimal solution (${optimal.players.length} players):\n${optimal.players.join('\n')}`);
             } else {
                 alert('Could not calculate optimal solution.');
+            }
+        }
+
+        // Calculate and display rarity score for daily mode
+        async function updateRarityScore() {
+            if (!isDailyMode || addedPlayers.length === 0) {
+                document.getElementById('rarityScore').style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch('https://journeyman.edgecompute.app/calculate_rarity', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        players: addedPlayers,
+                        date: dailyTeamsData.date
+                    })
+                });
+
+                if (response.ok) {
+                    const rarityData = await response.json();
+                    document.getElementById('rarityValue').textContent = rarityData.total_rarity_score.toFixed(2);
+                    document.getElementById('rarityScore').style.display = 'block';
+                } else {
+                    document.getElementById('rarityScore').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Failed to calculate rarity score:', error);
+                document.getElementById('rarityScore').style.display = 'none';
             }
         }
 
