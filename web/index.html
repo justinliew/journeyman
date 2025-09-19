@@ -162,10 +162,32 @@
             padding: 8px 15px;
             border-radius: 20px;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
             font-size: 0.9rem;
             border: 1px solid rgba(255, 255, 255, 0.3);
+            flex-direction: row;
+            justify-content: space-between;
+        }
+        
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .rarity-score {
+            color: #fbbf24;
+            font-weight: 600;
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+        
+        .team-stats {
+            color: #60a5fa;
+            font-weight: 500;
+            font-size: 0.75rem;
+            opacity: 0.9;
         }
         
         .remove-player {
@@ -384,6 +406,9 @@
         // This will store the complete player database once loaded
         let playerDatabase = {};
         let isLoadingData = false;
+        
+        // Store individual player rarity scores from the API
+        let playerRarityData = {};
 
         // Helper function to get player name from either string or PlayerInfo object
         function getPlayerName(player) {
@@ -411,6 +436,44 @@
                 return addedPlayer.name;
             }
             return '';
+        }
+
+        // Helper function to get rarity score for a player
+        function getPlayerRarityScore(addedPlayer) {
+            if (!playerRarityData || Object.keys(playerRarityData).length === 0) {
+                return null;
+            }
+            
+            // Try to match by ID first, then by name
+            if (typeof addedPlayer === 'object' && addedPlayer.id && playerRarityData[addedPlayer.id] !== undefined) {
+                return playerRarityData[addedPlayer.id].rarity_score;
+            }
+            
+            const playerName = getAddedPlayerName(addedPlayer);
+            if (playerName && playerRarityData[playerName] !== undefined) {
+                return playerRarityData[playerName].rarity_score;
+            }
+            
+            return null;
+        }
+
+        // Helper function to get complete player rarity data
+        function getPlayerRarityData(addedPlayer) {
+            if (!playerRarityData || Object.keys(playerRarityData).length === 0) {
+                return null;
+            }
+            
+            // Try to match by ID first, then by name
+            if (typeof addedPlayer === 'object' && addedPlayer.id && playerRarityData[addedPlayer.id] !== undefined) {
+                return playerRarityData[addedPlayer.id];
+            }
+            
+            const playerName = getAddedPlayerName(addedPlayer);
+            if (playerName && playerRarityData[playerName] !== undefined) {
+                return playerRarityData[playerName];
+            }
+            
+            return null;
         }
 
         // Helper function to check if an added player matches a team player, considering IDs
@@ -1099,8 +1162,18 @@
                 const playerTag = document.createElement('div');
                 playerTag.className = 'player-tag';
                 const playerName = getAddedPlayerName(player);
+                const playerData = getPlayerRarityData(player);
+                
+                let playerInfoHtml = `<div class="player-info">
+                    <div>${playerName}</div>`;
+                if (playerData) {
+                    playerInfoHtml += `<div class="rarity-score">Rarity: ${playerData.rarity_score.toFixed(2)}</div>`;
+                    playerInfoHtml += `<div class="team-stats">Teams: ${playerData.teams_in_current_game}/${playerData.total_teams_played}</div>`;
+                }
+                playerInfoHtml += `</div>`;
+                
                 playerTag.innerHTML = `
-                    ${playerName}
+                    ${playerInfoHtml}
                     <button class="remove-player" onclick="removePlayerByIndex(${index})">×</button>
                 `;
                 list.appendChild(playerTag);
@@ -1396,11 +1469,31 @@
                     const rarityData = await response.json();
                     document.getElementById('rarityValue').textContent = rarityData.total_rarity_score.toFixed(2);
                     document.getElementById('rarityScore').style.display = 'block';
+                    
+                    // Store individual player rarity scores for display in player boxes
+                    playerRarityData = {};
+                    if (rarityData.players && Array.isArray(rarityData.players)) {
+                        rarityData.players.forEach(player => {
+                            const key = player.id || player.name;
+                            if (key) {
+                                playerRarityData[key] = {
+                                    rarity_score: player.rarity_score,
+                                    teams_in_current_game: player.teams_in_current_game,
+                                    total_teams_played: player.total_teams_played
+                                };
+                            }
+                        });
+                    }
+                    
+                    // Refresh player list to show updated rarity scores
+                    updatePlayersList();
                 } else {
+                    playerRarityData = {};
                     document.getElementById('rarityScore').style.display = 'none';
                 }
             } catch (error) {
                 console.error('Failed to calculate rarity score:', error);
+                playerRarityData = {};
                 document.getElementById('rarityScore').style.display = 'none';
             }
         }
