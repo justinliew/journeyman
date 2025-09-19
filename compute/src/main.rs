@@ -68,17 +68,9 @@ fn get_daily_teams() -> Result<serde_json::Value, Error> {
 }
 
 // Calculate rarity score based on actual player usage in daily submissions
-fn calculate_daily_rarity_score(players: &[String], _date: &str) -> Result<serde_json::Value, Error> {
+fn calculate_rarity_score(players: &[serde_json::Value], game_teams: &[String]) -> Result<serde_json::Value, Error> {
     // Get the full player database to calculate team specialization
     let player_data = get(2)?;
-    
-    // Get daily teams for this date
-    let daily_teams_data = get_daily_teams()?;
-    let daily_teams: Vec<String> = daily_teams_data["teams"].as_array()
-        .unwrap_or(&vec![])
-        .iter()
-        .map(|v| v.as_str().unwrap_or("").to_string())
-        .collect();
     
     // Team code mapping
     let team_codes: HashMap<&str, &str> = [
@@ -98,7 +90,19 @@ fn calculate_daily_rarity_score(players: &[String], _date: &str) -> Result<serde
     let mut total_rarity_score = 0.0;
     let mut player_scores = Vec::new();
     
-    for player in players {
+    for player_obj in players {
+        // Extract player name and ID from the player object
+        let player_name = if let Some(name) = player_obj.get("name").and_then(|n| n.as_str()) {
+            name
+        } else if let Some(name) = player_obj.as_str() {
+            // Fallback for string format
+            name
+        } else {
+            continue; // Skip invalid player objects
+        };
+        
+        let player_id = player_obj.get("id").and_then(|id| id.as_str());
+        
         // Find how many total teams this player played for
         let mut total_teams_played = 0;
         let mut teams_in_current_game = 0;
@@ -110,11 +114,17 @@ fn calculate_daily_rarity_score(players: &[String], _date: &str) -> Result<serde
                     // Look for player in the new PlayerInfo format
                     let team_has_player = players_array.iter()
                         .any(|p| {
-                            if let Some(player_obj) = p.as_object() {
-                                if let Some(player_name) = player_obj.get("name").and_then(|n| n.as_str()) {
-                                    let matches = player_name.eq_ignore_ascii_case(player);
+                            if let Some(db_player_obj) = p.as_object() {
+                                // Try to match by ID first (most reliable), then fall back to name
+                                if let (Some(player_id), Some(db_id)) = (player_id, db_player_obj.get("id").and_then(|id| id.as_str())) {
+                                    let matches = player_id == db_id;
                                     if matches && player_info.is_none() {
-                                        // Store player info for response
+                                        player_info = Some(p.clone());
+                                    }
+                                    matches
+                                } else if let Some(db_player_name) = db_player_obj.get("name").and_then(|n| n.as_str()) {
+                                    let matches = db_player_name.eq_ignore_ascii_case(player_name);
+                                    if matches && player_info.is_none() {
                                         player_info = Some(p.clone());
                                     }
                                     matches
@@ -123,20 +133,20 @@ fn calculate_daily_rarity_score(players: &[String], _date: &str) -> Result<serde
                                 }
                             } else {
                                 // Fallback for old string format
-                                p.as_str().unwrap_or("").eq_ignore_ascii_case(player)
+                                p.as_str().unwrap_or("").eq_ignore_ascii_case(player_name)
                             }
                         });
                     
                     if team_has_player {
                         total_teams_played += 1;
                         
-                        // Check if this team is in the current daily game
+                        // Check if this team is in the current game
                         let team_name = team_codes.iter()
                             .find(|(_, code)| *code == team_code)
                             .map(|(name, _)| *name);
                         
                         if let Some(name) = team_name {
-                            if daily_teams.contains(&name.to_string()) {
+                            if game_teams.contains(&name.to_string()) {
                                 teams_in_current_game += 1;
                             }
                         }
@@ -160,7 +170,8 @@ fn calculate_daily_rarity_score(players: &[String], _date: &str) -> Result<serde
         total_rarity_score += player_rarity;
         
         let mut player_score = serde_json::json!({
-            "name": player,
+            "name": player_name,
+            "id": player_id,
             "total_teams_played": total_teams_played,
             "teams_in_current_game": teams_in_current_game,
             "specialization_ratio": specialization_ratio,
@@ -198,8 +209,19 @@ fn submit_daily_solution(players: Vec<String>, date: String, user_id: String) ->
         }));
     }
     
+    // Get daily teams for this date
+    let daily_teams_data = get_daily_teams()?;
+    let daily_teams: Vec<String> = daily_teams_data["teams"].as_array()
+        .unwrap_or(&vec![])
+        .iter()
+        .map(|v| v.as_str().unwrap_or("").to_string())
+        .collect();
+    
     // Calculate current rarity score
-    let rarity_data = calculate_daily_rarity_score(&players, &date)?;
+    let player_objects: Vec<serde_json::Value> = players.iter()
+        .map(|name| serde_json::json!({"name": name, "id": null}))
+        .collect();
+    let rarity_data = calculate_rarity_score(&player_objects, &daily_teams)?;
     
     // Update player usage statistics
     let usage_key = format!("daily_usage_{}", date);
@@ -326,33 +348,30 @@ fn main(req: Request) -> Result<Response, Error> {
                 .with_body(serde_json::to_string(&daily_teams).expect("failed to serialize daily teams")))
         },
         "/calculate_rarity" => {
-            // Parse POST body for player names and date
+            // Parse POST body for player objects and teams
             let body = req.into_body_str();
-            println!("Request body: {}", body);
             let request_data: serde_json::Value = match serde_json::from_str(&body) {
                 Ok(p) => p,
                 Err(_) => {
-                    println!("Failed to parse JSON");
                     return Ok(Response::from_status(StatusCode::BAD_REQUEST)
                         .with_header("Access-Control-Allow-Origin", "*")
                         .with_body_text_plain("Invalid JSON format"))
                 }
             };
             
-            println!("Parsed request data: {:?}", request_data);
             let players = request_data["players"].as_array()
                 .ok_or_else(|| Error::msg("Missing players array"))?
                 .iter()
-                .filter_map(|p| p.as_str().map(|s| s.to_string()))
-                .collect::<Vec<String>>();
-            println!("Players: {:?}", players);
+                .map(|p| p.clone())
+                .collect::<Vec<serde_json::Value>>();
                 
-            let date = request_data["date"].as_str()
-                .ok_or_else(|| Error::msg("Missing date"))?;
-            println!("Date: {:?}", date);
+            let teams = request_data["teams"].as_array()
+                .ok_or_else(|| Error::msg("Missing teams array"))?
+                .iter()
+                .filter_map(|t| t.as_str().map(|s| s.to_string()))
+                .collect::<Vec<String>>();
 
-            let rarity_data = calculate_daily_rarity_score(&players, date)?;
-            println!("Rarity: {:?}", rarity_data);
+            let rarity_data = calculate_rarity_score(&players, &teams)?;
             Ok(Response::from_status(StatusCode::OK)
                 .with_content_type(mime::APPLICATION_JSON)
                 .with_header("Access-Control-Allow-Origin", "*")

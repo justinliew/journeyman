@@ -1364,9 +1364,6 @@
             }
 
             try {
-                // Use daily date if available, otherwise use current date for practice mode
-                const gameDate = isDailyMode && dailyTeamsData ? dailyTeamsData.date : new Date().toISOString().split('T')[0];
-                
                 const response = await fetch('https://journeyman.edgecompute.app/calculate_rarity', {
                     method: 'POST',
                     headers: {
@@ -1388,7 +1385,7 @@
                                 };
                             }
                         }),
-                        date: gameDate
+                        teams: selectedTeams
                     })
                 });
 
