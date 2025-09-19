@@ -302,7 +302,12 @@ async fn build_database_from_player_search(
         ("Pittsburgh Penguins", "PIT"), ("San Jose Sharks", "SJS"), ("Seattle Kraken", "SEA"),
         ("St. Louis Blues", "STL"), ("Tampa Bay Lightning", "TBL"), ("Toronto Maple Leafs", "TOR"),
         ("Utah Hockey Club", "UTA"), ("Vancouver Canucks", "VAN"), ("Vegas Golden Knights", "VGK"),
-        ("Washington Capitals", "WSH"), ("Winnipeg Jets", "WPG")
+        ("Washington Capitals", "WSH"), ("Winnipeg Jets", "WPG"),
+        // Historical team names that map to team codes
+        ("Atlanta Thrashers", "ATL"), ("Hartford Whalers", "HFD"), ("Quebec Nordiques", "QUE"),
+        ("Minnesota North Stars", "MNS"), ("Colorado Rockies", "CLR"), ("Kansas City Scouts", "KCS"),
+        ("Atlanta Flames", "ATF"), ("Phoenix Coyotes", "PHX"), ("Arizona Coyotes", "ARI"),
+        ("Mighty Ducks of Anaheim", "MIG"), ("Winnipeg Jets (1979)", "WPG1"),
     ].iter().cloned().collect();
 
     // Initialize current teams in the database
