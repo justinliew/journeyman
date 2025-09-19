@@ -431,6 +431,22 @@
             return addedPlayerName.toLowerCase() === teamPlayerName.toLowerCase();
         }
 
+        // Helper function to check if a player is already added (considering ID for disambiguation)
+        function isPlayerAlreadyAdded(playerName, playerId) {
+            return addedPlayers.some(addedPlayer => {
+                const addedPlayerName = getAddedPlayerName(addedPlayer);
+                const addedPlayerId = (typeof addedPlayer === 'object' && addedPlayer.id) ? addedPlayer.id : null;
+                
+                // If both have IDs, check by ID for exact match
+                if (playerId && addedPlayerId) {
+                    return addedPlayerId === playerId;
+                }
+                
+                // Otherwise fall back to name matching
+                return addedPlayerName.toLowerCase() === playerName.toLowerCase();
+            });
+        }
+
         // Load comprehensive NHL player data from the API
         async function loadNHLPlayerData() {
             if (isLoadingData) return;
@@ -648,16 +664,7 @@
                 return;
             }
             
-            if (addedPlayers.some(p => getAddedPlayerName(p).toLowerCase() === playerName.toLowerCase())) {
-                showError("Player already added");
-                return;
-            }
-            
-            // Hide previous messages
-            errorDiv.style.display = 'none';
-            validationDiv.style.display = 'none';
-            
-            // Validate and find matching players
+            // Validate and find matching players first to get potential IDs
             const validationResult = validatePlayerName(playerName);
             
             if (validationResult.status === 'not_found') {
@@ -670,10 +677,55 @@
                 return;
             }
             
-            if (validationResult.status === 'multiple_matches') {
-                showDisambiguationModal(validationResult.matches);
-                return;
+            // Check for duplicates more intelligently
+            if (validationResult.status === 'valid') {
+                // Single player found - check if already added
+                if (isPlayerAlreadyAdded(validationResult.playerName, validationResult.playerId)) {
+                    showError("Player already added");
+                    return;
+                }
+            } else if (validationResult.status === 'multiple_matches') {
+                // Multiple players found - check if any have been added already
+                const availableMatches = validationResult.matches.filter(match => 
+                    !isPlayerAlreadyAdded(match.name, match.id)
+                );
+                
+                if (availableMatches.length === 0) {
+                    showError("All players with that name have already been added");
+                    return;
+                } else if (availableMatches.length === 1) {
+                    // Only one option left, add it directly
+                    const match = availableMatches[0];
+                    const playerObj = {
+                        name: match.name,
+                        id: match.id,
+                        playerInfo: match.playerInfo,
+                        teamsPlayed: match.teamsInGame
+                    };
+                    addedPlayers.push(playerObj);
+                    input.value = '';
+                    
+                    validationDiv.innerHTML = `✅ Added ${match.name} (played for: ${match.teamsInGame.join(', ')})`;
+                    validationDiv.style.display = 'block';
+                    setTimeout(() => validationDiv.style.display = 'none', 3000);
+                    
+                    updateDisplay();
+                    checkVictory();
+                    
+                    if (isDailyMode) {
+                        updateRarityScore();
+                    }
+                    return;
+                } else {
+                    // Show disambiguation only for players not already added
+                    showDisambiguationModal(availableMatches);
+                    return;
+                }
             }
+            
+            // Hide previous messages
+            errorDiv.style.display = 'none';
+            validationDiv.style.display = 'none';
             
             if (validationResult.status === 'valid') {
                 // Create player object to store with ID for disambiguation
@@ -916,6 +968,12 @@
 
         function selectDisambiguatedPlayer(playerName, teamsPlayed, playerId, playerInfo) {
             closeDisambiguationModal();
+            
+            // Check if this specific player is already added
+            if (isPlayerAlreadyAdded(playerName, playerId)) {
+                showError("This player has already been added");
+                return;
+            }
             
             // Create player object to store with ID for disambiguation
             const playerObj = {
