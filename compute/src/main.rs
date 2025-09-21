@@ -100,8 +100,8 @@ fn get_teams_played_for(player_id: &str) -> Result<Vec<String>, Error> {
     Ok(teams)
 }
 
-// Calculate rarity score based on actual player usage in daily submissions
-fn calculate_rarity_score(players: &[serde_json::Value], game_teams: &[String]) -> Result<serde_json::Value, Error> {
+// Calculate overlap score based on actual player usage in daily submissions
+fn calculate_overlap_score(players: &[serde_json::Value], game_teams: &[String]) -> Result<serde_json::Value, Error> {
     // Get the full player database to calculate team specialization
     let player_data = get(2)?;
     
@@ -120,7 +120,7 @@ fn calculate_rarity_score(players: &[serde_json::Value], game_teams: &[String]) 
         ("Washington Capitals", "WSH"), ("Winnipeg Jets", "WPG")
     ].iter().cloned().collect();
     
-    let mut total_rarity_score = 0.0;
+    let mut total_overlap_score = 0.0;
     let mut player_scores = Vec::new();
     
     for player_obj in players {
@@ -196,19 +196,19 @@ fn calculate_rarity_score(players: &[serde_json::Value], game_teams: &[String]) 
             0.0
         };
         
-        // Rarity score: reward players who contributed to more teams in the current game
+        // overlap score: reward players who contributed to more teams in the current game
         // The specialization ratio ensures we still prefer players who didn't play everywhere
-        let player_rarity = teams_in_current_game as f64 * specialization_ratio;
-        
-        total_rarity_score += player_rarity;
-        
+        let player_overlap_score = teams_in_current_game as f64 * specialization_ratio;
+
+        total_overlap_score += player_overlap_score;
+
         let mut player_score = serde_json::json!({
             "name": player_name,
             "id": player_id,
             "total_teams_played": total_teams_played,
             "teams_in_current_game": teams_in_current_game,
             "specialization_ratio": specialization_ratio,
-            "rarity_score": player_rarity
+            "overlap_score": player_overlap_score
         });
         
         // Include player info if found
@@ -220,9 +220,9 @@ fn calculate_rarity_score(players: &[serde_json::Value], game_teams: &[String]) 
     }
     
     Ok(serde_json::json!({
-        "total_rarity_score": total_rarity_score,
+        "total_overlap_score": total_overlap_score,
         "player_count": players.len(),
-        "average_rarity": if players.len() > 0 { total_rarity_score / players.len() as f64 } else { 0.0 },
+        "average_overlap": if players.len() > 0 { total_overlap_score / players.len() as f64 } else { 0.0 },
         "players": player_scores
     }))
 }
@@ -250,11 +250,11 @@ fn submit_daily_solution(players: Vec<String>, date: String, user_id: String) ->
         .map(|v| v.as_str().unwrap_or("").to_string())
         .collect();
     
-    // Calculate current rarity score
+    // Calculate current overlap score
     let player_objects: Vec<serde_json::Value> = players.iter()
         .map(|name| serde_json::json!({"name": name, "id": null}))
         .collect();
-    let rarity_data = calculate_rarity_score(&player_objects, &daily_teams)?;
+    let overlap_data = calculate_overlap_score(&player_objects, &daily_teams)?;
     
     // Update player usage statistics
     let usage_key = format!("daily_usage_{}", date);
@@ -279,7 +279,7 @@ fn submit_daily_solution(players: Vec<String>, date: String, user_id: String) ->
     let submission_data = serde_json::json!({
         "players": players,
         "player_count": players.len(),
-        "rarity_score": rarity_data["total_rarity_score"],
+        "overlap_score": overlap_data["total_overlap_score"],
         "submitted_at": std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
@@ -293,7 +293,7 @@ fn submit_daily_solution(players: Vec<String>, date: String, user_id: String) ->
     
     Ok(serde_json::json!({
         "success": true,
-        "rarity_data": rarity_data,
+        "overlap_data": overlap_data,
         "leaderboard_position": calculate_leaderboard_position(&submission_data, &leaderboard),
         "total_submissions": leaderboard["submissions"].as_array().unwrap_or(&vec![]).len()
     }))
@@ -315,7 +315,7 @@ fn get_daily_leaderboard(date: &str) -> Result<serde_json::Value, Error> {
 
 // Calculate where this submission ranks
 fn calculate_leaderboard_position(_submission: &serde_json::Value, _leaderboard: &serde_json::Value) -> u32 {
-    // Placeholder - would compare player_count first, then rarity_score
+    // Placeholder - would compare player_count first, then overlap_score
     1
 }
 
@@ -344,7 +344,7 @@ fn main(req: Request) -> Result<Response, Error> {
 
     // Filter request methods...
     match req.get_method() {
-        // Block requests with unexpected methods (but allow POST for rarity calculation)
+        // Block requests with unexpected methods (but allow POST for overlap calculation)
         &Method::PUT | &Method::PATCH | &Method::DELETE => {
             return Ok(Response::from_status(StatusCode::METHOD_NOT_ALLOWED)
                 .with_header(header::ALLOW, "GET, HEAD, POST, PURGE")
@@ -380,7 +380,7 @@ fn main(req: Request) -> Result<Response, Error> {
                 .with_header("Access-Control-Allow-Origin", "*")
                 .with_body(serde_json::to_string(&daily_teams).expect("failed to serialize daily teams")))
         },
-        "/calculate_rarity" => {
+        "/calculate_overlap" => {
             // Parse POST body for player objects and teams
             let body = req.into_body_str();
             let request_data: serde_json::Value = match serde_json::from_str(&body) {
@@ -404,11 +404,11 @@ fn main(req: Request) -> Result<Response, Error> {
                 .filter_map(|t| t.as_str().map(|s| s.to_string()))
                 .collect::<Vec<String>>();
 
-            let rarity_data = calculate_rarity_score(&players, &teams)?;
+            let overlap_data = calculate_overlap_score(&players, &teams)?;
             Ok(Response::from_status(StatusCode::OK)
                 .with_content_type(mime::APPLICATION_JSON)
                 .with_header("Access-Control-Allow-Origin", "*")
-                .with_body(serde_json::to_string(&rarity_data).expect("failed to serialize rarity data")))
+                .with_body(serde_json::to_string(&overlap_data).expect("failed to serialize overlap data")))
         },
         "/submit_daily" => {
             // Parse POST body for submission

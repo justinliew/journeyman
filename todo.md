@@ -1,10 +1,9 @@
 P1
 
-
 P2
 * maybe better auto-complete, some people couldn't figure that out.
 * move the "played today" flag from local storage into kvstore so players can't fudge it.
-* proper leaderboard, enter your name
+* proper leaderboard, enter your name, login.
 
 P3
 

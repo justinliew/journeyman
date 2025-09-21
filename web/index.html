@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +11,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -18,7 +19,7 @@
             color: white;
             padding: 20px;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -28,30 +29,30 @@
             padding: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-        
+
         /* Mobile responsive container and body */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
             }
-            
+
             .container {
                 padding: 20px;
                 border-radius: 15px;
             }
         }
-        
+
         @media (max-width: 480px) {
             body {
                 padding: 5px;
             }
-            
+
             .container {
                 padding: 15px;
                 border-radius: 12px;
             }
         }
-        
+
         h1 {
             text-align: center;
             margin-bottom: 10px;
@@ -61,73 +62,73 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        
+
         .subtitle {
             text-align: center;
             margin-bottom: 30px;
             opacity: 0.9;
             font-size: 1.1rem;
         }
-        
+
         /* Mobile responsive headings */
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
                 margin-bottom: 8px;
             }
-            
+
             .subtitle {
                 font-size: 1rem;
                 margin-bottom: 20px;
             }
-            
+
             h2 {
                 font-size: 1.3rem;
                 margin-bottom: 8px;
             }
         }
-        
+
         @media (max-width: 480px) {
             h1 {
                 font-size: 1.8rem;
                 margin-bottom: 6px;
             }
-            
+
             .subtitle {
                 font-size: 0.9rem;
                 margin-bottom: 15px;
             }
-            
+
             h2 {
                 font-size: 1.2rem;
                 margin-bottom: 6px;
             }
         }
-        
+
         .game-section {
             margin-bottom: 30px;
         }
-        
+
         /* Mobile responsive game sections */
         @media (max-width: 768px) {
             .game-section {
                 margin-bottom: 20px;
             }
         }
-        
+
         @media (max-width: 480px) {
             .game-section {
                 margin-bottom: 15px;
             }
         }
-        
+
         .teams-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
-        
+
         /* Mobile responsive grid layouts */
         @media (max-width: 768px) {
             .teams-grid {
@@ -136,7 +137,7 @@
                 margin: 15px 0;
             }
         }
-        
+
         @media (max-width: 480px) {
             .teams-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -144,7 +145,7 @@
                 margin: 10px 0;
             }
         }
-        
+
         .team-card {
             background: rgba(255, 255, 255, 0.15);
             border-radius: 12px;
@@ -153,57 +154,57 @@
             border: 2px solid transparent;
             transition: all 0.3s ease;
         }
-        
+
         .team-card.satisfied {
             border-color: #4ade80;
             background: rgba(74, 222, 128, 0.2);
         }
-        
+
         .team-name {
             font-weight: bold;
             font-size: 1.1rem;
         }
-        
+
         .team-players {
             margin-top: 8px;
             font-size: 0.9rem;
             opacity: 0.8;
             min-height: 20px;
         }
-        
+
         /* Mobile responsive team card styling */
         @media (max-width: 768px) {
             .team-card {
                 padding: 10px;
             }
-            
+
             .team-name {
                 font-size: 0.95rem;
             }
-            
+
             .team-players {
                 font-size: 0.8rem;
                 margin-top: 6px;
                 min-height: 16px;
             }
         }
-        
+
         @media (max-width: 480px) {
             .team-card {
                 padding: 8px;
             }
-            
+
             .team-name {
                 font-size: 0.9rem;
             }
-            
+
             .team-players {
                 font-size: 0.75rem;
                 margin-top: 4px;
                 min-height: 14px;
             }
         }
-        
+
         .controls {
             display: flex;
             gap: 15px;
@@ -212,7 +213,7 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -224,31 +225,31 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
-        
+
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
-        
+
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
-        
+
         /* Mobile responsive controls and buttons */
         @media (max-width: 768px) {
             .controls {
                 gap: 10px;
                 margin: 15px 0;
             }
-            
+
             button {
                 padding: 10px 20px;
                 font-size: 0.9rem;
             }
         }
-        
+
         @media (max-width: 480px) {
             .controls {
                 gap: 8px;
@@ -256,7 +257,7 @@
                 flex-direction: column;
                 align-items: stretch;
             }
-            
+
             button {
                 padding: 12px 16px;
                 font-size: 0.9rem;
@@ -264,21 +265,21 @@
                 margin: 2px 0;
             }
         }
-        
+
         .player-input-section {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             padding: 20px;
             margin: 20px 0;
         }
-        
+
         .input-group {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
             flex-wrap: wrap;
         }
-        
+
         input[type="text"] {
             flex: 1;
             min-width: 200px;
@@ -289,24 +290,24 @@
             color: white;
             font-size: 1rem;
         }
-        
+
         input[type="text"]::placeholder {
             color: rgba(255, 255, 255, 0.6);
         }
-        
+
         input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
             background: rgba(255, 255, 255, 0.15);
         }
-        
+
         .players-list {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 15px;
         }
-        
+
         .player-tag {
             background: rgba(255, 255, 255, 0.2);
             padding: 8px 15px;
@@ -319,94 +320,95 @@
             flex-direction: row;
             justify-content: space-between;
         }
-        
+
         .player-info {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
-        
-        .rarity-score {
+
+        .overlap-score {
             color: #fbbf24;
             font-weight: 600;
             font-size: 0.75rem;
             opacity: 0.9;
         }
-        
+
         .team-stats {
-            color: #60a5fa;
+            color: #60fa65;
             font-weight: 500;
             font-size: 0.75rem;
             opacity: 0.9;
         }
-        
+
         /* Mobile responsive player input and lists */
         @media (max-width: 768px) {
             .player-input-section {
                 padding: 15px;
                 margin: 15px 0;
             }
-            
+
             .input-group {
                 gap: 8px;
                 margin-bottom: 12px;
             }
-            
+
             input[type="text"] {
                 min-width: 150px;
                 padding: 10px;
                 font-size: 0.9rem;
             }
-            
+
             .players-list {
                 gap: 8px;
                 margin-top: 12px;
             }
-            
+
             .player-tag {
                 padding: 6px 12px;
                 font-size: 0.85rem;
                 gap: 6px;
             }
         }
-        
+
         @media (max-width: 480px) {
             .player-input-section {
                 padding: 12px;
                 margin: 10px 0;
                 border-radius: 12px;
             }
-            
+
             .input-group {
                 flex-direction: column;
                 gap: 6px;
                 margin-bottom: 10px;
             }
-            
+
             input[type="text"] {
                 min-width: unset;
                 width: 100%;
                 padding: 12px;
                 font-size: 1rem;
             }
-            
+
             .players-list {
                 gap: 6px;
                 margin-top: 10px;
             }
-            
+
             .player-tag {
                 padding: 8px 10px;
                 font-size: 0.8rem;
                 gap: 6px;
                 border-radius: 15px;
             }
-            
-            .rarity-score, .team-stats {
+
+            .overlap-score,
+            .team-stats {
                 font-size: 0.7rem;
             }
         }
-        
+
         .remove-player {
             background: rgba(255, 0, 0, 0.6);
             border: none;
@@ -421,7 +423,7 @@
             justify-content: center;
             padding: 0;
         }
-        
+
         .stats {
             text-align: center;
             font-size: 1.2rem;
@@ -430,7 +432,7 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
         }
-        
+
         /* Mobile responsive stats section */
         @media (max-width: 768px) {
             .stats {
@@ -439,7 +441,7 @@
                 padding: 12px;
             }
         }
-        
+
         @media (max-width: 480px) {
             .stats {
                 font-size: 0.9rem;
@@ -448,12 +450,12 @@
                 line-height: 1.4;
             }
         }
-        
+
         .satisfied-count {
             color: #4ade80;
             font-weight: bold;
         }
-        
+
         .victory-message {
             text-align: center;
             background: linear-gradient(135deg, #4ade80, #22c55e);
@@ -465,12 +467,19 @@
             font-weight: bold;
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
         }
-        
+
         .error-message {
             background: rgba(239, 68, 68, 0.8);
             color: white;
@@ -550,44 +559,59 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🏒 The Journeyman Matrix Game</h1>
         <p class="subtitle">Find the fewest players who collectively played for all 8 teams!</p>
-        
+
         <div class="controls">
             <button onclick="generateNewGame()">Practice Mode</button>
             <button onclick="startDailyMode()">Daily Challenge</button>
             <button onclick="clearPlayers()">Clear Players</button>
-            <button id="shareBtn" onclick="shareGame()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: none;">Share Game</button>
-            <button id="optimalSolutionBtn" onclick="showOptimalSolution()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); display: none;">Show Optimal Solution</button>
+            <button id="shareBtn" onclick="shareGame()"
+                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: none;">Share
+                Game</button>
+            <button id="optimalSolutionBtn" onclick="showOptimalSolution()"
+                style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); display: none;">Show Optimal
+                Solution</button>
         </div>
-        
+
         <div class="stats">
-            <span id="gameMode">Practice Mode</span> | 
-            Teams Satisfied: <span class="satisfied-count" id="satisfiedCount">0</span>/8 | 
+            <span id="gameMode">Practice Mode</span> |
+            Teams Satisfied: <span class="satisfied-count" id="satisfiedCount">0</span>/8 |
             Players Used: <span id="playerCount">0</span>
-            <div id="rarityScore" style="display: none; margin-top: 5px; font-size: 0.9rem;">
-                Rarity Score: <span id="rarityValue">0</span>
+            <div id="overlapScore" style="display: none; margin-top: 5px; font-size: 0.9rem;">
+                Overlap Score: <span id="overlapValue">0</span>
             </div>
         </div>
-        
+
         <div id="victoryMessage" class="victory-message" style="display: none;"></div>
-        
+
         <div class="game-section">
             <h2>Selected Teams:</h2>
             <div id="teamsGrid" class="teams-grid"></div>
         </div>
-        
+
         <div class="player-input-section">
             <h3>Add Players:</h3>
             <div class="input-group">
-                <input type="text" id="playerInput" placeholder="Enter player name..." onkeypress="handleKeyPress(event)">
+                <input type="text" id="playerInput" placeholder="Enter player name..."
+                    onkeypress="handleKeyPress(event)">
                 <button onclick="addPlayer()">Add Player</button>
             </div>
             <div id="errorMessage" class="error-message" style="display: none;"></div>
             <div id="validationInfo" class="validation-info" style="display: none;"></div>
             <div id="playersList" class="players-list"></div>
+            <!-- Add this inside your .player-input-section, after the playersList div -->
+            <div id="hintPanel" style="margin-top:20px; display:none;">
+                <button id="getHintBtn" onclick="getHint()" style="margin-bottom:10px;">Get Hint</button>
+                <div id="hintContent"></div>
+                <button id="prevHintBtn" style="display:none; margin-top:10px; margin-right:10px;"
+                    onclick="showPrevHint()">Previous Hint</button>
+                <button id="nextHintBtn" onclick="showNextHint()" style="display:none; margin-top:10px;">Next
+                    Hint</button>
+            </div>
         </div>
     </div>
 
@@ -605,7 +629,7 @@
         // Team codes mapping for NHL API
         const teamCodes = {
             "Anaheim Ducks": "ANA",
-            "Boston Bruins": "BOS", 
+            "Boston Bruins": "BOS",
             "Buffalo Sabres": "BUF",
             "Calgary Flames": "CGY",
             "Carolina Hurricanes": "CAR",
@@ -638,12 +662,19 @@
             "Winnipeg Jets": "WPG"
         };
 
+        let hintList = [];
+        let currentHintIdx = 0;
+
         // This will store the complete player database once loaded
         let playerDatabase = {};
         let isLoadingData = false;
-        
-        // Store individual player rarity scores from the API
-        let playerRarityData = {};
+
+        // Store individual player overlap scores from the API
+        let playerOverlapData = {};
+
+        // Show the hint panel always (you can hide/show later as needed)
+        document.getElementById('hintPanel').style.display = 'block';
+
 
         // Helper function to get player name from either string or PlayerInfo object
         function getPlayerName(player) {
@@ -673,41 +704,41 @@
             return '';
         }
 
-        // Helper function to get rarity score for a player
-        function getPlayerRarityScore(addedPlayer) {
-            if (!playerRarityData || Object.keys(playerRarityData).length === 0) {
+        // Helper function to get overlap score for a player
+        function getPlayerOverlapScore(addedPlayer) {
+            if (!playerOverlapData || Object.keys(playerOverlapData).length === 0) {
                 return null;
             }
-            
+
             // Try to match by ID first, then by name
-            if (typeof addedPlayer === 'object' && addedPlayer.id && playerRarityData[addedPlayer.id] !== undefined) {
-                return playerRarityData[addedPlayer.id].rarity_score;
+            if (typeof addedPlayer === 'object' && addedPlayer.id && playerOverlapData[addedPlayer.id] !== undefined) {
+                return playerOverlapData[addedPlayer.id].overlap_score;
             }
-            
+
             const playerName = getAddedPlayerName(addedPlayer);
-            if (playerName && playerRarityData[playerName] !== undefined) {
-                return playerRarityData[playerName].rarity_score;
+            if (playerName && playerOverlapData[playerName] !== undefined) {
+                return playerOverlapData[playerName].overlap_score;
             }
-            
+
             return null;
         }
 
-        // Helper function to get complete player rarity data
-        function getPlayerRarityData(addedPlayer) {
-            if (!playerRarityData || Object.keys(playerRarityData).length === 0) {
+        // Helper function to get complete player overlap data
+        function getPlayerOverlapData(addedPlayer) {
+            if (!playerOverlapData || Object.keys(playerOverlapData).length === 0) {
                 return null;
             }
-            
+
             // Try to match by ID first, then by name
-            if (typeof addedPlayer === 'object' && addedPlayer.id && playerRarityData[addedPlayer.id] !== undefined) {
-                return playerRarityData[addedPlayer.id];
+            if (typeof addedPlayer === 'object' && addedPlayer.id && playerOverlapData[addedPlayer.id] !== undefined) {
+                return playerOverlapData[addedPlayer.id];
             }
-            
+
             const playerName = getAddedPlayerName(addedPlayer);
-            if (playerName && playerRarityData[playerName] !== undefined) {
-                return playerRarityData[playerName];
+            if (playerName && playerOverlapData[playerName] !== undefined) {
+                return playerOverlapData[playerName];
             }
-            
+
             return null;
         }
 
@@ -715,13 +746,13 @@
         function doesAddedPlayerMatchTeamPlayer(addedPlayer, teamPlayer) {
             const addedPlayerName = getAddedPlayerName(addedPlayer);
             const teamPlayerName = getPlayerName(teamPlayer);
-            
+
             // If we have ID information for both, use that for exact matching
-            if (typeof addedPlayer === 'object' && addedPlayer.id && 
+            if (typeof addedPlayer === 'object' && addedPlayer.id &&
                 typeof teamPlayer === 'object' && teamPlayer.id) {
                 return addedPlayer.id === teamPlayer.id;
             }
-            
+
             // Otherwise fall back to name matching
             return addedPlayerName.toLowerCase() === teamPlayerName.toLowerCase();
         }
@@ -731,12 +762,12 @@
             return addedPlayers.some(addedPlayer => {
                 const addedPlayerName = getAddedPlayerName(addedPlayer);
                 const addedPlayerId = (typeof addedPlayer === 'object' && addedPlayer.id) ? addedPlayer.id : null;
-                
+
                 // If both have IDs, check by ID for exact match
                 if (playerId && addedPlayerId) {
                     return addedPlayerId === playerId;
                 }
-                
+
                 // Otherwise fall back to name matching
                 return addedPlayerName.toLowerCase() === playerName.toLowerCase();
             });
@@ -746,7 +777,7 @@
         async function loadNHLPlayerData() {
             if (isLoadingData) return;
             isLoadingData = true;
-            
+
             const loadingElement = document.createElement('div');
             loadingElement.id = 'loadingIndicator';
             loadingElement.className = 'stats';
@@ -771,16 +802,16 @@
                 console.error('Failed to fetch player data from server, falling back to direct API calls.');
 
             }
-            
+
             // Remove loading indicator
             const loadingEl = document.getElementById('loadingIndicator');
             if (loadingEl) {
                 loadingEl.remove();
             }
-            
+
             isLoadingData = false;
             console.log('NHL player database loaded:', playerDatabase);
-            
+
             // Show completion message
             const completeMsg = document.createElement('div');
             completeMsg.className = 'stats';
@@ -825,7 +856,7 @@
                         player_count: addedPlayers.length
                     })
                 });
-                
+
                 if (response.ok) {
                     const result = await response.json();
                     console.log('Daily solution submitted successfully:', result);
@@ -840,7 +871,7 @@
         function generateNewGame() {
             const allTeams = Object.keys(teamCodes);
             selectedTeams = [];
-            
+
             // Select 8 random teams
             while (selectedTeams.length < 8) {
                 const randomTeam = allTeams[Math.floor(Math.random() * allTeams.length)];
@@ -848,30 +879,30 @@
                     selectedTeams.push(randomTeam);
                 }
             }
-            
+
             addedPlayers = [];
             gameActive = true;
             isDailyMode = false;
             dailyTeamsData = null;
-            
+
             // Update game mode display
             document.getElementById('gameMode').textContent = 'Practice Mode';
-            document.getElementById('rarityScore').style.display = 'block';
-            
+            document.getElementById('overlapScore').style.display = 'block';
+
             // Re-enable input controls
             const playerInput = document.getElementById('playerInput');
             const addButton = document.querySelector('.input-group button');
             playerInput.disabled = false;
             addButton.disabled = false;
             playerInput.placeholder = "Enter player name...";
-            
+
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
             document.getElementById('shareBtn').style.display = 'inline-block';
-            
-            // Initialize rarity score for practice mode
-            updateRarityScore();
+
+            // Initialize overlap score for practice mode
+            updateOverlapScore();
         }
 
         async function startDailyMode() {
@@ -884,18 +915,18 @@
                     gameActive = true;
                     isDailyMode = true;
                     hasSubmittedDaily = false;
-                    
+
                     // Check if user has already submitted today
                     const submissionCheck = localStorage.getItem(`daily_submitted_${dailyTeamsData.date}`);
                     if (submissionCheck) {
                         hasSubmittedDaily = true;
                         showError('You have already submitted a solution for today! You can view but not resubmit.');
                     }
-                    
+
                     // Update game mode display
                     document.getElementById('gameMode').textContent = `Daily Challenge (${dailyTeamsData.date})`;
-                    document.getElementById('rarityScore').style.display = 'none';
-                    
+                    document.getElementById('overlapScore').style.display = 'none';
+
                     // Re-enable input controls (unless already submitted)
                     const playerInput = document.getElementById('playerInput');
                     const addButton = document.querySelector('.input-group button');
@@ -908,7 +939,7 @@
                         addButton.disabled = true;
                         playerInput.placeholder = "Already submitted for today";
                     }
-                    
+
                     updateDisplay();
                     document.getElementById('victoryMessage').style.display = 'none';
                     document.getElementById('optimalSolutionBtn').style.display = 'none';
@@ -924,20 +955,20 @@
 
         function clearPlayers() {
             addedPlayers = [];
-            
+
             // Re-enable input controls
             const playerInput = document.getElementById('playerInput');
             const addButton = document.querySelector('.input-group button');
             playerInput.disabled = false;
             addButton.disabled = false;
             playerInput.placeholder = "Enter player name...";
-            
+
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
-            
-            // Update rarity score
-            updateRarityScore();
+
+            // Update overlap score
+            updateOverlapScore();
         }
 
         function addPlayer() {
@@ -945,41 +976,41 @@
             const playerName = input.value.trim();
             const errorDiv = document.getElementById('errorMessage');
             const validationDiv = document.getElementById('validationInfo');
-            
+
             if (!playerName) {
                 showError("Please enter a player name");
                 return;
             }
-            
+
             if (!gameActive) {
                 showError("Please start a new game first");
                 return;
             }
-            
+
             // Check if already submitted in daily mode
             if (isDailyMode && hasSubmittedDaily) {
                 showError("You have already submitted your solution for today");
                 return;
             }
-            
+
             // Validate and find matching players first to get potential IDs
             const validationResult = validatePlayerName(playerName);
-            
+
             if (validationResult.status === 'not_found') {
                 showError("Player not found in database or didn't play for any selected teams");
                 return;
             }
-            
+
             if (validationResult.status === 'no_team_match') {
                 showError(`${validationResult.exactMatch} didn't play for any of the selected teams`);
                 return;
             }
-            
+
             if (validationResult.status === 'too_many_matches') {
                 showError("Too many players match that name. Please be more specific.");
                 return;
             }
-            
+
             // Check for duplicates more intelligently
             if (validationResult.status === 'valid') {
                 // Single player found - check if already added
@@ -989,10 +1020,10 @@
                 }
             } else if (validationResult.status === 'multiple_matches') {
                 // Multiple players found - check if any have been added already
-                const availableMatches = validationResult.matches.filter(match => 
+                const availableMatches = validationResult.matches.filter(match =>
                     !isPlayerAlreadyAdded(match.name, match.id)
                 );
-                
+
                 if (availableMatches.length === 0) {
                     showError("All players with that name have already been added");
                     return;
@@ -1003,7 +1034,7 @@
                         showError(`${match.name} didn't play for any of the selected teams`);
                         return;
                     }
-                    
+
                     const playerObj = {
                         name: match.name,
                         id: match.id,
@@ -1012,16 +1043,16 @@
                     };
                     addedPlayers.push(playerObj);
                     input.value = '';
-                    
+
                     validationDiv.innerHTML = `✅ Added ${match.name} (played for: ${match.teamsInGame.join(', ')})`;
                     validationDiv.style.display = 'block';
                     setTimeout(() => validationDiv.style.display = 'none', 3000);
-                    
+
                     updateDisplay();
                     checkVictory();
-                    
-                    // Calculate rarity score
-                    updateRarityScore();
+
+                    // Calculate overlap score
+                    updateOverlapScore();
                     return;
                 } else {
                     // Always show disambiguation dialog, even if no players are valid for the game
@@ -1029,11 +1060,11 @@
                     return;
                 }
             }
-            
+
             // Hide previous messages
             errorDiv.style.display = 'none';
             validationDiv.style.display = 'none';
-            
+
             if (validationResult.status === 'valid') {
                 // Create player object to store with ID for disambiguation
                 const playerObj = {
@@ -1042,22 +1073,22 @@
                     playerInfo: validationResult.playerInfo,
                     teamsPlayed: validationResult.teamsPlayed
                 };
-                
+
                 // Add the validated player object
                 addedPlayers.push(playerObj);
                 input.value = '';
-                
+
                 // Show validation info
                 const teamsPlayed = validationResult.teamsPlayed;
                 validationDiv.innerHTML = `✅ Added ${validationResult.playerName} (played for: ${teamsPlayed.join(', ')})`;
                 validationDiv.style.display = 'block';
                 setTimeout(() => validationDiv.style.display = 'none', 3000);
-                
+
                 updateDisplay();
                 checkVictory();
-                
-                // Calculate rarity score
-                updateRarityScore();
+
+                // Calculate overlap score
+                updateOverlapScore();
             }
         }
 
@@ -1065,22 +1096,22 @@
             if (Object.keys(playerDatabase).length === 0) {
                 return { status: 'not_found' };
             }
-            
+
             const normalizedInput = inputName.toLowerCase().trim();
             const allMatches = [];
-            
+
             // Search through all teams in the database
             for (const [teamCode, players] of Object.entries(playerDatabase.teams || {})) {
                 const teamName = Object.keys(teamCodes).find(name => teamCodes[name] === teamCode);
-                
+
                 players.forEach(player => {
                     const playerName = getPlayerName(player);
                     const normalizedPlayer = playerName.toLowerCase();
-                    
+
                     // Get player ID if available (for disambiguation)
                     const playerId = (typeof player === 'object' && player.id) ? player.id : null;
                     const playerInfo = (typeof player === 'object') ? player : null;
-                    
+
                     // Exact match
                     if (normalizedPlayer === normalizedInput) {
                         allMatches.push({
@@ -1108,17 +1139,17 @@
                     }
                 });
             }
-            
+
             if (allMatches.length === 0) {
                 return { status: 'not_found' };
             }
-            
+
             // Group matches by player ID first, then by name for backward compatibility
             const uniquePlayers = new Map();
             allMatches.forEach(match => {
                 // Use player ID as primary key if available, otherwise fall back to name
                 const playerKey = match.id || match.name;
-                
+
                 if (!uniquePlayers.has(playerKey)) {
                     uniquePlayers.set(playerKey, {
                         name: match.name,
@@ -1128,12 +1159,12 @@
                         teamsInGame: []
                     });
                 }
-                
+
                 const player = uniquePlayers.get(playerKey);
                 if (!player.teams.includes(match.teamName)) {
                     player.teams.push(match.teamName);
                 }
-                
+
                 // Check if this team is in the current game
                 if (selectedTeams.includes(match.teamName)) {
                     if (!player.teamsInGame.includes(match.teamName)) {
@@ -1141,10 +1172,10 @@
                     }
                 }
             });
-            
+
             // Get all unique players (don't filter by selected teams for disambiguation)
             const allUniquePlayers = Array.from(uniquePlayers.values());
-            
+
             // For disambiguation, show ALL matching players (not just valid ones)
             // This prevents players from using the dialog to discover which players are valid
             if (allUniquePlayers.length > 1) {
@@ -1152,7 +1183,7 @@
                 if (allUniquePlayers.length > 5) {
                     return { status: 'too_many_matches' };
                 }
-                
+
                 // Check for name conflicts (multiple players with the same name)
                 const nameGroups = new Map();
                 allUniquePlayers.forEach(player => {
@@ -1162,12 +1193,12 @@
                     }
                     nameGroups.get(name).push(player);
                 });
-                
+
                 // Mark players that have name conflicts
                 const playersWithConflictMarked = allUniquePlayers.map(player => {
                     const name = player.name.toLowerCase();
                     const hasNameConflict = nameGroups.get(name).length > 1;
-                    
+
                     return {
                         name: player.name,
                         id: player.id,
@@ -1178,23 +1209,23 @@
                         hasNameConflict: hasNameConflict
                     };
                 });
-                
+
                 // Return all players for disambiguation, but mark which are valid
                 return {
                     status: 'multiple_matches',
                     matches: playersWithConflictMarked
                 };
             }
-            
+
             // Single player found - check if they're valid for the game
             const singlePlayer = allUniquePlayers[0];
             if (singlePlayer.teamsInGame.length === 0) {
-                return { 
-                    status: 'no_team_match', 
-                    exactMatch: singlePlayer.name 
+                return {
+                    status: 'no_team_match',
+                    exactMatch: singlePlayer.name
                 };
             }
-            
+
             // Single valid player found
             return {
                 status: 'valid',
@@ -1203,7 +1234,7 @@
                 playerInfo: singlePlayer.playerInfo,
                 teamsPlayed: singlePlayer.teamsInGame
             };
-            
+
             // This should not happen if logic above is correct
             return { status: 'not_found' };
         }
@@ -1211,7 +1242,7 @@
         function showDisambiguationModal(matches) {
             const modal = document.getElementById('disambiguationModal');
             const optionsDiv = document.getElementById('playerOptions');
-            
+
             // Update modal title based on whether there are name conflicts
             const hasNameConflicts = matches.some(match => match.hasNameConflict);
             const modalTitle = modal.querySelector('h3');
@@ -1222,16 +1253,16 @@
                 modalTitle.textContent = 'Multiple players found';
                 modal.querySelector('p').textContent = 'Please select which player you meant:';
             }
-            
+
             optionsDiv.innerHTML = '';
-            
+
             matches.forEach(match => {
                 const button = document.createElement('button');
                 button.className = 'player-option';
-                
+
                 // Create detailed display for disambiguation
                 let displayText = `<div><strong>${match.name}</strong></div>`;
-                
+
                 // Add additional info if there are name conflicts
                 if (match.hasNameConflict && match.playerInfo) {
                     const additionalInfo = [];
@@ -1244,35 +1275,35 @@
                     if (match.playerInfo.position) {
                         additionalInfo.push(`Position: ${match.playerInfo.position}`);
                     }
-                    
+
                     if (additionalInfo.length > 0) {
                         displayText += `<div class="player-option-details" style="font-size: 0.8rem; opacity: 0.9; margin-top: 4px;">${additionalInfo.join(' | ')}</div>`;
                     }
                 }
-                
+
                 button.innerHTML = displayText;
                 button.onclick = () => selectDisambiguatedPlayer(match.name, match.teamsInGame, match.id, match.playerInfo, match.isValidForGame);
                 optionsDiv.appendChild(button);
             });
-            
+
             modal.style.display = 'flex';
         }
 
         function selectDisambiguatedPlayer(playerName, teamsPlayed, playerId, playerInfo, isValidForGame) {
             closeDisambiguationModal();
-            
+
             // Check if this specific player is already added
             if (isPlayerAlreadyAdded(playerName, playerId)) {
                 showError("This player has already been added");
                 return;
             }
-            
+
             // Check if this player is valid for the current game
             if (!isValidForGame || teamsPlayed.length === 0) {
                 showError(`${playerName} didn't play for any of the selected teams`);
                 return;
             }
-            
+
             // Create player object to store with ID for disambiguation
             const playerObj = {
                 name: playerName,
@@ -1280,15 +1311,15 @@
                 playerInfo: playerInfo,
                 teamsPlayed: teamsPlayed
             };
-            
+
             // Add the selected player object
             addedPlayers.push(playerObj);
             document.getElementById('playerInput').value = '';
-            
+
             // Show validation info with additional details if available
             const validationDiv = document.getElementById('validationInfo');
             let validationText = `✅ Added ${playerName} (played for: ${teamsPlayed.join(', ')})`;
-            
+
             // Add extra details if we have player info and there were name conflicts
             if (playerInfo && playerId) {
                 const extraDetails = [];
@@ -1298,16 +1329,16 @@
                     validationText += `<br><small>Details: ${extraDetails.join(', ')}</small>`;
                 }
             }
-            
+
             validationDiv.innerHTML = validationText;
             validationDiv.style.display = 'block';
             setTimeout(() => validationDiv.style.display = 'none', 4000);
-            
+
             updateDisplay();
             checkVictory();
-            
-            // Calculate rarity score
-            updateRarityScore();
+
+            // Calculate overlap score
+            updateOverlapScore();
         }
 
         function closeDisambiguationModal() {
@@ -1319,10 +1350,10 @@
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
-            
-            // Update rarity score if in daily mode
+
+            // Update overlap score if in daily mode
             if (isDailyMode) {
-                updateRarityScore();
+                updateOverlapScore();
             }
         }
 
@@ -1331,9 +1362,9 @@
             updateDisplay();
             document.getElementById('victoryMessage').style.display = 'none';
             document.getElementById('optimalSolutionBtn').style.display = 'none';
-            
-            // Update rarity score
-            updateRarityScore();
+
+            // Update overlap score
+            updateOverlapScore();
         }
 
         function handleKeyPress(event) {
@@ -1360,11 +1391,11 @@
         function updateTeamsGrid() {
             const grid = document.getElementById('teamsGrid');
             grid.innerHTML = '';
-            
+
             selectedTeams.forEach(team => {
                 const teamCard = document.createElement('div');
                 teamCard.className = 'team-card';
-                
+
                 // Check which players satisfy this team
                 const satisfyingPlayers = addedPlayers.filter(addedPlayer => {
                     const teamid = teamCodes[team];
@@ -1375,16 +1406,16 @@
                     }
                     return false;
                 });
-                
+
                 if (satisfyingPlayers.length > 0) {
                     teamCard.classList.add('satisfied');
                 }
-                
+
                 teamCard.innerHTML = `
                     <div class="team-name">${team}</div>
                     <div class="team-players">${satisfyingPlayers.map(p => getAddedPlayerName(p)).join(', ') || 'No players yet'}</div>
                 `;
-                
+
                 grid.appendChild(teamCard);
             });
         }
@@ -1392,21 +1423,21 @@
         function updatePlayersList() {
             const list = document.getElementById('playersList');
             list.innerHTML = '';
-            
+
             addedPlayers.forEach((player, index) => {
                 const playerTag = document.createElement('div');
                 playerTag.className = 'player-tag';
                 const playerName = getAddedPlayerName(player);
-                const playerData = getPlayerRarityData(player);
-                
+                const playerData = getPlayerOverlapData(player);
+
                 let playerInfoHtml = `<div class="player-info">
                     <div>${playerName}</div>`;
                 if (playerData) {
-                    playerInfoHtml += `<div class="rarity-score">Rarity: ${playerData.rarity_score.toFixed(2)}</div>`;
+                    playerInfoHtml += `<div class="overlap-score">Overlap: ${playerData.overlap_score.toFixed(2)}</div>`;
                     playerInfoHtml += `<div class="team-stats">Teams: ${playerData.teams_in_current_game}/${playerData.total_teams_played}</div>`;
                 }
                 playerInfoHtml += `</div>`;
-                
+
                 playerTag.innerHTML = `
                     ${playerInfoHtml}
                     <button class="remove-player" onclick="removePlayerByIndex(${index})">×</button>
@@ -1427,7 +1458,7 @@
                 }
                 return false;
             });
-            
+
             document.getElementById('satisfiedCount').textContent = satisfiedTeams.length;
             document.getElementById('playerCount').textContent = addedPlayers.length;
         }
@@ -1444,10 +1475,10 @@
                 }
                 return false;
             });
-            
+
             console.log(`CheckVictory: ${satisfiedTeams.length}/8 teams satisfied`, satisfiedTeams);
             console.log(`Is daily mode: ${isDailyMode}`);
-            
+
             if (satisfiedTeams.length === 8) {
                 console.log('Victory condition met!');
                 const optimalSolution = findOptimalSolution();
@@ -1456,14 +1487,14 @@
                 const optimalBtn = document.getElementById('optimalSolutionBtn');
                 const playerInput = document.getElementById('playerInput');
                 const addButton = document.querySelector('.input-group button');
-                
+
                 console.log('Victory elements found:', {
                     victoryDiv: !!victoryDiv,
                     optimalBtn: !!optimalBtn,
                     playerInput: !!playerInput,
                     addButton: !!addButton
                 });
-                
+
                 // Handle daily mode submission if not already submitted
                 if (isDailyMode && !hasSubmittedDaily) {
                     console.log('Submitting daily solution...');
@@ -1471,16 +1502,16 @@
                     hasSubmittedDaily = true;
                     localStorage.setItem(`daily_submitted_${dailyTeamsData.date}`, 'true');
                 }
-                
+
                 // Show the optimal solution button
                 optimalBtn.style.display = 'inline-block';
-                
+
                 // Disable input and add button
                 playerInput.disabled = true;
                 addButton.disabled = true;
-                playerInput.placeholder = isDailyMode && hasSubmittedDaily ? 
+                playerInput.placeholder = isDailyMode && hasSubmittedDaily ?
                     "Solution submitted!" : "Game completed! Start a new game to play again.";
-                
+
                 if (isOptimal) {
                     if (isDailyMode) {
                         victoryDiv.innerHTML = `🎉 PERFECT! You found the optimal solution with ${addedPlayers.length} player${addedPlayers.length === 1 ? '' : 's'}! 🏆<br>
@@ -1511,17 +1542,17 @@
 
             // Build player-to-teams mapping for selected teams only
             const playerTeamsMap = new Map();
-            
+
             selectedTeams.forEach(team => {
                 const teamid = teamCodes[team];
                 if (playerDatabase.teams[teamid]) {
                     playerDatabase.teams[teamid].forEach(player => {
                         const playerName = getPlayerName(player);
                         const playerId = (typeof player === 'object' && player.id) ? player.id : null;
-                        
+
                         // Use player ID as key if available, otherwise fall back to name
                         const playerKey = playerId || playerName;
-                        
+
                         if (!playerTeamsMap.has(playerKey)) {
                             playerTeamsMap.set(playerKey, {
                                 name: playerName,
@@ -1553,8 +1584,8 @@
             if (solutions.length === 0) {
                 return { players: [], teamsCovered: 0 };
             }
-            
-            return solutions.reduce((best, current) => 
+
+            return solutions.reduce((best, current) =>
                 current.players.length < best.players.length ? current : best
             );
         }
@@ -1572,7 +1603,7 @@
                 playersCopy.forEach((player, index) => {
                     // Count how many uncovered teams this player covers
                     const newTeamsCovered = player.teams.filter(team => uncoveredTeams.has(team)).length;
-                    
+
                     if (newTeamsCovered === 0) return;
 
                     let score;
@@ -1619,7 +1650,7 @@
             // Try combinations of increasing size
             for (let size = 1; size <= Math.min(selectedTeams.length, 4); size++) {
                 const combinations = generateCombinations(playersWithTeams, size);
-                
+
                 for (const combo of combinations) {
                     const coveredTeams = new Set();
                     combo.forEach(player => {
@@ -1627,7 +1658,7 @@
                     });
 
                     // Check if this combination covers all teams
-                    if (coveredTeams.size === targetTeams.size && 
+                    if (coveredTeams.size === targetTeams.size &&
                         Array.from(targetTeams).every(team => coveredTeams.has(team))) {
                         return {
                             players: combo.map(p => ({ name: p.name, id: p.id })),
@@ -1667,15 +1698,15 @@
             }
         }
 
-        // Calculate and display rarity score for all game modes
-        async function updateRarityScore() {
+        // Calculate and display overlap score for all game modes
+        async function updateOverlapScore() {
             if (addedPlayers.length === 0) {
-                document.getElementById('rarityScore').style.display = 'none';
+                document.getElementById('overlapScore').style.display = 'none';
                 return;
             }
 
             try {
-                const response = await fetch('https://journeyman.edgecompute.app/calculate_rarity', {
+                const response = await fetch('https://journeyman.edgecompute.app/calculate_overlap', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1701,35 +1732,35 @@
                 });
 
                 if (response.ok) {
-                    const rarityData = await response.json();
-                    document.getElementById('rarityValue').textContent = rarityData.total_rarity_score.toFixed(2);
-                    document.getElementById('rarityScore').style.display = 'block';
-                    
-                    // Store individual player rarity scores for display in player boxes
-                    playerRarityData = {};
-                    if (rarityData.players && Array.isArray(rarityData.players)) {
-                        rarityData.players.forEach(player => {
+                    const overlapData = await response.json();
+                    document.getElementById('overlapValue').textContent = overlapData.total_overlap_score.toFixed(2);
+                    document.getElementById('overlapScore').style.display = 'block';
+
+                    // Store individual player overlap scores for display in player boxes
+                    playerOverlapData = {};
+                    if (overlapData.players && Array.isArray(overlapData.players)) {
+                        overlapData.players.forEach(player => {
                             const key = player.id || player.name;
                             if (key) {
-                                playerRarityData[key] = {
-                                    rarity_score: player.rarity_score,
+                                playerOverlapData[key] = {
+                                    overlap_score: player.overlap_score,
                                     teams_in_current_game: player.teams_in_current_game,
                                     total_teams_played: player.total_teams_played
                                 };
                             }
                         });
                     }
-                    
-                    // Refresh player list to show updated rarity scores
+
+                    // Refresh player list to show updated overlap scores
                     updatePlayersList();
                 } else {
-                    playerRarityData = {};
-                    document.getElementById('rarityScore').style.display = 'none';
+                    playerOverlapData = {};
+                    document.getElementById('overlapScore').style.display = 'none';
                 }
             } catch (error) {
-                console.error('Failed to calculate rarity score:', error);
-                playerRarityData = {};
-                document.getElementById('rarityScore').style.display = 'none';
+                console.error('Failed to calculate overlap score:', error);
+                playerOverlapData = {};
+                document.getElementById('overlapScore').style.display = 'none';
             }
         }
 
@@ -1739,16 +1770,16 @@
                 alert('No game to share! Start a practice mode game first.');
                 return;
             }
-            
+
             if (isDailyMode) {
                 alert('Daily challenges cannot be shared - they use the same teams for everyone.');
                 return;
             }
-            
+
             // Encode teams as URL parameter
             const teamsParam = encodeURIComponent(selectedTeams.join(','));
             const shareUrl = `${window.location.origin}${window.location.pathname}?teams=${teamsParam}`;
-            
+
             // Copy to clipboard
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(shareUrl).then(() => {
@@ -1760,7 +1791,7 @@
                 showShareFallback(shareUrl);
             }
         }
-        
+
         function showShareSuccess(message) {
             const btn = document.getElementById('shareBtn');
             const originalText = btn.textContent;
@@ -1771,24 +1802,24 @@
                 btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
             }, 2000);
         }
-        
+
         function showShareFallback(url) {
             // Fallback: show the URL in a prompt for manual copying
             prompt('Copy this link to share your game:', url);
         }
-        
+
         function loadSharedGame() {
             const urlParams = new URLSearchParams(window.location.search);
             const teamsParam = urlParams.get('teams');
-            
+
             if (teamsParam) {
                 try {
                     const sharedTeams = decodeURIComponent(teamsParam).split(',');
                     const allTeams = Object.keys(teamCodes);
-                    
+
                     // Validate that all shared teams are valid
                     const validTeams = sharedTeams.filter(team => allTeams.includes(team));
-                    
+
                     if (validTeams.length === sharedTeams.length && validTeams.length > 0) {
                         // Load the shared game
                         selectedTeams = validTeams;
@@ -1796,30 +1827,98 @@
                         gameActive = true;
                         isDailyMode = false;
                         dailyTeamsData = null;
-                        
+
                         // Update UI
                         document.getElementById('gameMode').textContent = 'Practice Mode (Shared)';
-                        document.getElementById('rarityScore').style.display = 'block';
+                        document.getElementById('overlapScore').style.display = 'block';
                         document.getElementById('shareBtn').style.display = 'inline-block';
-                        
+
                         updateDisplay();
                         checkVictory();
-                        updateRarityScore();
-                        
+                        updateOverlapScore();
+
                         return true; // Successfully loaded shared game
                     }
                 } catch (e) {
                     console.log('Invalid shared game URL:', e);
                 }
             }
-            
+
             return false; // No valid shared game found
+        }
+
+        function getHint() {
+            document.getElementById('hintContent').innerHTML = '';
+            document.getElementById('nextHintBtn').style.display = 'none';
+            document.getElementById('prevHintBtn').style.display = 'none';
+            hintList = [];
+            currentHintIdx = 0;
+
+            fetch('https://journeyman.edgecompute.app/get_hint', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    teams: selectedTeams,
+                    used_players: addedPlayers.map(p => typeof p === 'object' ? p.id || p.name : p)
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data && Array.isArray(data.hints) && data.hints.length > 0) {
+                        hintList = data.hints;
+                        currentHintIdx = 0;
+                        showCurrentHint();
+                        if (hintList.length > 1) {
+                            document.getElementById('nextHintBtn').style.display = 'inline-block';
+                        }
+                    } else {
+                        document.getElementById('hintContent').innerHTML = '<em>No hints available.</em>';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('hintContent').innerHTML = '<em>Failed to fetch hint.</em>';
+                });
+        }
+
+        // Add Previous Hint button to the hint panel
+        const hintPanel = document.getElementById('hintPanel');
+        if (!document.getElementById('prevHintBtn')) {
+            const prevBtn = document.createElement('button');
+            prevBtn.id = 'prevHintBtn';
+            prevBtn.textContent = 'Previous Hint';
+            prevBtn.style = 'display:none; margin-top:10px; margin-right:10px;';
+            prevBtn.onclick = showPrevHint;
+            hintPanel.insertBefore(prevBtn, document.getElementById('nextHintBtn'));
+        }
+
+        function showCurrentHint() {
+            if (hintList.length === 0) return;
+            document.getElementById('hintContent').innerHTML = `<div style="background:rgba(255,255,255,0.15);padding:12px;border-radius:8px;">
+        <strong>Hint ${currentHintIdx + 1} of ${hintList.length}:</strong><br>${hintList[currentHintIdx]}
+    </div>`;
+            // Show/hide Previous/Next buttons
+            document.getElementById('prevHintBtn').style.display = currentHintIdx > 0 ? 'inline-block' : 'none';
+            document.getElementById('nextHintBtn').style.display = (hintList.length > 1 && currentHintIdx < hintList.length - 1) ? 'inline-block' : 'none';
+        }
+
+        function showNextHint() {
+            if (currentHintIdx < hintList.length - 1) {
+                currentHintIdx++;
+                showCurrentHint();
+            }
+        }
+
+        function showPrevHint() {
+            if (currentHintIdx > 0) {
+                currentHintIdx--;
+                showCurrentHint();
+            }
         }
 
         // Load data and start the game
         async function initializeGame() {
             await loadNHLPlayerData();
-            
+
             // Check if this is a shared game first
             if (!loadSharedGame()) {
                 // No shared game, generate a new random game
@@ -1831,4 +1930,5 @@
         initializeGame();
     </script>
 </body>
+
 </html>
