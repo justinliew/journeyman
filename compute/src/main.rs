@@ -1,5 +1,6 @@
 //! Default Compute template program.
 
+use fastly::http::header::LAST_MODIFIED;
 use fastly::http::{header, Method, StatusCode};
 use fastly::kv_store;
 use fastly::{mime, Error, Request, Response};
@@ -65,6 +66,38 @@ fn get_daily_teams() -> Result<serde_json::Value, Error> {
     });
     
     Ok(response)
+}
+
+fn get_teams_played_for(player_id: &str) -> Result<Vec<String>, Error> {
+    let player_data = get(2)?;
+    let mut teams = Vec::new();
+    
+    if let Some(teams_obj) = player_data["teams"].as_object() {
+        for (team_code, team_players) in teams_obj {
+            if let Some(players_array) = team_players.as_array() {
+                // Look for player in the new PlayerInfo format
+                let team_has_player = players_array.iter()
+                    .any(|p| {
+                        if let Some(db_player_obj) = p.as_object() {
+                            // Try to match by ID first (most reliable), then fall back to name
+                            if let Some(db_id) = db_player_obj.get("id").and_then(|id| id.as_str()) {
+                                player_id == db_id
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    });
+                
+                if team_has_player {
+                    teams.push(team_code.to_string());
+                }
+            }
+        }
+    }
+  
+    Ok(teams)
 }
 
 // Calculate rarity score based on actual player usage in daily submissions
@@ -410,9 +443,219 @@ fn main(req: Request) -> Result<Response, Error> {
                 .with_body(serde_json::to_string(&result).expect("failed to serialize submission result")))
         },
 
+        "/get_hint" => {
+            // Parse POST body for teams and used_players
+            let body = req.into_body_str();
+            let request_data: serde_json::Value = match serde_json::from_str(&body) {
+                Ok(p) => p,
+                Err(_) => {
+                    return Ok(Response::from_status(StatusCode::BAD_REQUEST)
+                        .with_header("Access-Control-Allow-Origin", "*")
+                        .with_body_text_plain("Invalid JSON format"))
+                }
+            };
+
+            let teams = request_data["teams"].as_array()
+                .ok_or_else(|| Error::msg("Missing teams array"))?
+                .iter()
+                .filter_map(|t| t.as_str().map(|s| s.to_string()))
+                .collect::<Vec<String>>();
+
+            let used_players = request_data["used_players"].as_array()
+                .unwrap_or(&vec![])
+                .iter()
+                .filter_map(|p| p.as_str().map(|s| s.to_string()))
+                .collect::<Vec<String>>();
+
+            let hint_result = generate_hint(&teams, &used_players)?;
+            Ok(Response::from_status(StatusCode::OK)
+                .with_content_type(mime::APPLICATION_JSON)
+                .with_header("Access-Control-Allow-Origin", "*")
+                .with_body(serde_json::to_string(&hint_result).expect("failed to serialize hint result")))
+        },
         // Catch all other requests and return a 404.
         _ => Ok(Response::from_status(StatusCode::NOT_FOUND)
             .with_header("Access-Control-Allow-Origin", "*")
             .with_body_text_plain("The page you requested could not be found\n")),
+    }
+}
+
+// Generate a hint for a player who fits all remaining teams and is not used
+fn generate_hint(teams: &[String], used_players: &[String]) -> Result<serde_json::Value, Error> {
+    let player_data = get(2)?;
+    let mut best_player: Option<serde_json::Value> = None;
+    let mut best_count = 0;
+
+    // Find the player who satisfies the most teams and is not used
+    if let Some(teams_obj) = player_data["teams"].as_object() {
+        // Build a map of team_code -> Vec<PlayerInfo>
+        let mut all_players: Vec<serde_json::Value> = Vec::new();
+        let mut player_team_map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+        for team in teams {
+            let team_code = team_code_from_name(team);
+            if let Some(code) = team_code {
+                if let Some(players_array) = teams_obj.get(code).and_then(|v| v.as_array()) {
+                    for p in players_array {
+                        let pid = p.get("id").and_then(|id| id.as_str()).unwrap_or("");
+                        if !used_players.iter().any(|u| u.eq(pid)) {
+                            let entry = player_team_map.entry(pid.to_string()).or_insert_with(Vec::new);
+                            if !entry.contains(team) {
+                                entry.push(team.clone());
+                            }
+                            all_players.push(p.clone());
+                        }
+                    }
+                }
+            }
+        }
+        // Find the player who covers the most teams
+        let mut checked = std::collections::HashSet::new();
+        for p in all_players {
+            let pid = p.get("id").and_then(|n| n.as_str()).unwrap_or("").to_string();
+            if checked.contains(&pid) { continue; }
+            checked.insert(pid.clone());
+            let count = player_team_map.get(&pid).map(|v| v.len()).unwrap_or(0);
+            if count > best_count {
+                best_count = count;
+                best_player = Some(p.clone());
+            }
+        }
+    }
+
+    println!("The best player is {:?} who fits {} teams", best_player, best_count);
+
+    let id = best_player.as_ref().and_then(|p| p.get("id")).and_then(|id| id.as_str()).unwrap_or("0");
+    let url = format!("https://api-web.nhle.com/v1/player/{}/landing", id);
+
+    println!("Fetching player details from URL: {}", url);
+    let body_str =
+    Request::get(url)
+        .send("nhl-api")?
+        .into_body()
+        .into_string();
+    
+    let player_details : serde_json::Value = serde_json::from_str(&body_str)?;
+
+    println!("Details: {:?}", player_details);
+
+    // Generate hints
+    let mut hints = Vec::new();
+    if let Some(player) = &best_player {
+        if best_count < teams.len() {
+            hints.push(format!("This player fits {} out of {} teams.", best_count, teams.len()));
+        }
+        // 1. NHL teams played for
+       let teams = get_teams_played_for(id)?;
+        if !teams.is_empty() {
+            hints.push(format!("Played for NHL teams: {}", teams.join(", ")));
+        }
+
+        let seasons = player_details.get("seasonTotals").and_then(|s| s.as_array()).unwrap_or(&vec![]).clone();
+        if !seasons.is_empty() {
+            for season in seasons.iter().rev() {
+                if let Some(league) = season.get("leagueAbbrev").and_then(|l| l.as_str()) {
+                    if league != "NHL" {
+                        continue;
+                    }
+                    if let Some(points) = season.get("points").and_then(|p| p.as_i64()) {
+                        hints.push(format!("Had {} points in the most recent season.", points));
+                        break;
+                    } else if let Some(save_pct) = season.get("savePctg").and_then(|p| p.as_number()) {
+                        hints.push(format!("Had a save percentage of {:.3} in the most recent season.", save_pct.as_f64().unwrap()));
+                        break;
+                    }
+                }
+            }
+        }
+
+        player_details.get("birthCountry").and_then(|c| c.as_str()).map(|country| {
+            hints.push(format!("Born in {}", country));
+        });
+
+        // // 3. Current cap hit
+        // if let Some(cap_hit) = player.get("capHit").and_then(|c| c.as_i64()) {
+        //     hints.push(format!("Current cap hit: ${}M", cap_hit / 1_000_000));
+        // }
+
+        // 4. Amateur team
+
+        // 5. Height/weight
+        let height = player_details.get("heightInInches").and_then(|h| h.as_str());
+        let weight = player_details.get("weightInPounds").and_then(|w| w.as_i64());
+        if let (Some(h), Some(w)) = (height, weight) {
+            hints.push(format!("Height/Weight: {} / {} lbs", h, w));
+        }
+
+        // 6. Draft position and year
+        let draft_details = player_details.get("draftDetails").and_then(|d| d.as_object());
+
+        if let Some(draft_details) = draft_details {
+            let (year, round, pick) = (
+                draft_details.get("year").and_then(|y| y.as_i64()),
+                draft_details.get("round").and_then(|r| r.as_i64()),
+                draft_details.get("pickInRound").and_then(|p| p.as_i64())
+            );
+            if let (Some(y), Some(r), Some(p)) = (year, round, pick) {
+                hints.push(format!("Drafted in {}: Round {}, Pick {}", y, r, p));
+            }
+            if let Some(team) = draft_details.get("teamAbbrev").and_then(|t| t.as_str()) {
+                hints.push(format!("Drafted by {}", team));
+            }
+        }
+
+        // 8. Years active
+        let mut first_season = None;
+        let mut last_season = None;
+        if !seasons.is_empty() {
+            for season in &seasons {
+                if let Some(league) = season.get("leagueAbbrev").and_then(|l| l.as_str()) {
+                    if league != "NHL" {
+                        continue;
+                    }
+                }
+                if let Some(year) = season.get("season").and_then(|s| s.as_number()) {
+                    let year_str = format!("{}", year.as_u64().unwrap());
+                    if first_season.is_none() {
+                        first_season = Some(year_str.clone());
+                    }
+                    last_season = Some(year_str);
+                }
+            }
+            if (first_season.is_some() && last_season.is_some()) {
+                hints.push(format!("Played in NHL from {} to {}", first_season.unwrap(), last_season.unwrap()));
+            }
+        }
+        
+        // 9. Career points/save percentage
+        if let Some(career_totals) = player.get("careerTotals").and_then(|s| s.as_object()) {
+            if let Some(regular_season) = career_totals.get("regularSeason").and_then(|r| r.as_object()) {
+                if let Some(points) = regular_season.get("points").and_then(|p| p.as_i64()) {
+                    hints.push(format!("Career regular season points: {}", points));
+                }
+                if let Some(save_pct) = regular_season.get("savePctg").and_then(|p| p.as_number()) {
+                    hints.push(format!("Career regular season save percentage: {:.3}", save_pct.as_f64().unwrap()));
+                }
+            }
+        }
+    }
+    
+    Ok(serde_json::json!({ "hints": hints }))
+}
+
+// Helper: get team code from name
+fn team_code_from_name(name: &str) -> Option<&'static str> {
+    match name {
+        "Anaheim Ducks" => Some("ANA"), "Boston Bruins" => Some("BOS"), "Buffalo Sabres" => Some("BUF"),
+        "Calgary Flames" => Some("CGY"), "Carolina Hurricanes" => Some("CAR"), "Chicago Blackhawks" => Some("CHI"),
+        "Colorado Avalanche" => Some("COL"), "Columbus Blue Jackets" => Some("CBJ"), "Dallas Stars" => Some("DAL"),
+        "Detroit Red Wings" => Some("DET"), "Edmonton Oilers" => Some("EDM"), "Florida Panthers" => Some("FLA"),
+        "Los Angeles Kings" => Some("LAK"), "Minnesota Wild" => Some("MIN"), "Montreal Canadiens" => Some("MTL"),
+        "Nashville Predators" => Some("NSH"), "New Jersey Devils" => Some("NJD"), "New York Islanders" => Some("NYI"),
+        "New York Rangers" => Some("NYR"), "Ottawa Senators" => Some("OTT"), "Philadelphia Flyers" => Some("PHI"),
+        "Pittsburgh Penguins" => Some("PIT"), "San Jose Sharks" => Some("SJS"), "Seattle Kraken" => Some("SEA"),
+        "St. Louis Blues" => Some("STL"), "Tampa Bay Lightning" => Some("TBL"), "Toronto Maple Leafs" => Some("TOR"),
+        "Utah Hockey Club" => Some("UTA"), "Vancouver Canucks" => Some("VAN"), "Vegas Golden Knights" => Some("VGK"),
+        "Washington Capitals" => Some("WSH"), "Winnipeg Jets" => Some("WPG"),
+        _ => None,
     }
 }
